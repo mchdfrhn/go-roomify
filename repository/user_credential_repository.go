@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"go-roomify/model"
 	"go-roomify/utils/query"
+
 	"fmt"
 )
 
@@ -16,9 +17,7 @@ type userCredentialRepository struct {
 	db *sql.DB
 }
 
-func (self *userRepository) GetByUsername(username string) (model.UserCredential, error) {
-	var user_cr model.UserCredential
-
+func (self *userCredentialRepository) GetByUsername(username string) (model.UserCredential, error) {
 	qselect := query.QSelect{DB: self.db}
 
 	qselect.Table("mst_user_profile")
@@ -26,20 +25,45 @@ func (self *userRepository) GetByUsername(username string) (model.UserCredential
 		"users.id",
 		"users.username",
 		"users.password",
+		"mst_role.position",
 		"users.token")
-	qselect.Join("users", "mst_user_profile.users_id = users.id")
+	qselect.Join("mst_role", "mst_user_profile.role_id = mst_role.id")
+	qselect.Join("users", "mst_user_profile.user_id = users.id")
 	qselect.Where("users.username", "=", username)
 	qselect.Limit(1)
 
+	fmt.Println("Query: ", qselect.GetQuery())
+
 	rows, err := qselect.Run()
 
-	for rows.Next() {
-		
-	}
-
 	if err != nil {
-		return model.UserCredential{},err
+		return model.UserCredential{}, err
 	}
 
-	return user,nil
+	var r_user_cr model.UserCredential
+
+	for rows.Next() {
+		err := rows.Scan(
+			&r_user_cr.Id,
+			&r_user_cr.Username,
+			&r_user_cr.Password,
+			&r_user_cr.Role,
+			&r_user_cr.Token)
+
+		if err != nil {
+			return model.UserCredential{}, err
+		}
+
+		fmt.Println("Username: ", r_user_cr.Username, r_user_cr.Password)
+	}
+
+	rows.Close()
+
+	return r_user_cr, nil
+}
+
+func NewUserCredentialRepository(db *sql.DB) (UserCredentialRepository) {
+	return &userCredentialRepository {
+		db: db,
+	}
 }
