@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"go-roomify/model"
 	"go-roomify/utils/query"
-
-	"fmt"
 )
 
 
@@ -32,8 +30,6 @@ func (self *userCredentialRepository) GetByUsername(username string) (model.User
 	qselect.Where("users.username", "=", username)
 	qselect.Limit(1)
 
-	fmt.Println("Query: ", qselect.GetQuery())
-
 	rows, err := qselect.Run()
 
 	if err != nil {
@@ -53,8 +49,6 @@ func (self *userCredentialRepository) GetByUsername(username string) (model.User
 		if err != nil {
 			return model.UserCredential{}, err
 		}
-
-		fmt.Println("Username: ", r_user_cr.Username, r_user_cr.Password)
 	}
 
 	rows.Close()
