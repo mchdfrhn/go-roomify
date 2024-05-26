@@ -1,6 +1,6 @@
 package response
 
-import "go-enigma-laundry/model/dto"
+import "go-roomify/model/dto"
 
 type Status struct {
 	Code        int    `json:"code"`
