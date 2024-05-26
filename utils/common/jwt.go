@@ -13,7 +13,7 @@ type JwtClaim struct {
 	jwt.StandardClaims
 	UserId string `json:"userId"`
 	Role string `json:"role"`
-	Email string `json:"email"`
+	//Email string `json:"email"`
 }
 
 type JwtToken interface {
@@ -32,8 +32,8 @@ func (self *jwtToken) GenerateTokenJwt(user_data model.User) (string, error) {
 			ExpiresAt: time.Now().Add(self.config.JwtLifeTime).Unix(),
 		},
 		UserId: user_data.Id,
-		Role: user_data.Role,
-		Email: user_data.Email
+		Role: user_data.Role
+		//Email: user_data.Email
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
