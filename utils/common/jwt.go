@@ -11,13 +11,13 @@ import (
 
 type JwtClaim struct {
 	jwt.StandardClaims
-	UserId string `json:"userId"`
+	UserId string `json:"user_id"`
 	Role string `json:"role"`
 	//Email string `json:"email"`
 }
 
 type JwtToken interface {
-	GenerateTokenJwt(user_data model.User) (string, error)
+	GenerateTokenJwt(user_data model.UserCredential) (string, error)
 	VerifyToken(token_string string) (jwt.MapClaims, error)
 }
 
@@ -25,14 +25,14 @@ type jwtToken struct {
 	config config.TokenConfig
 }
 
-func (self *jwtToken) GenerateTokenJwt(user_data model.User) (string, error) {
+func (self *jwtToken) GenerateTokenJwt(user_cr model.UserCredential) (string, error) {
 	claims := JwtClaim{
 		StandardClaims: jwt.StandardClaims{
 			Issuer:    self.config.IssuerName,
 			ExpiresAt: time.Now().Add(self.config.JwtLifeTime).Unix(),
 		},
-		UserId: user_data.Id,
-		Role: user_data.Role
+		UserId: user_cr.Id,
+		Role: user_cr.Role,
 		//Email: user_data.Email
 	}
 
