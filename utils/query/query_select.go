@@ -106,3 +106,9 @@ func (self *QSelect) Run() (*sql.Rows, error) {
 	rows, err := self.DB.Query(self.GetQuery(), self.param_value...)
 	return rows, err
 }
+
+func (self *QSelect) RunRow() (*sql.Row) {
+	row := self.DB.QueryRow(self.GetQuery(), self.param_value...)
+	return row
+}
+
