@@ -43,7 +43,7 @@ func ( ru *roomUsecase ) CreateRoom( roomRequest request.RoomRequest ) ( model.R
 		Name: roomRequest.Name,
 		RoomType: roomRequest.RoomType,
 		Capacity: roomRequest.Capacity,
-		IsAvailable: false,
+		IsAvailable: true,
 	}
 
 	err = ru.repo.CreateRoom( roomModel )

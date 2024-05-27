@@ -75,9 +75,9 @@ func( rc *roomController ) Route(){
 	group.GET("/:idOrName", rc.getRoomByIdOrNameHandler)
 }
 
-func NewRoomController( ru usecase.RoomUsecase, rg *gin.RouterGroup ) *roomController{
+func NewRoomController( ru usecase.RoomUsecase, rg *gin.Engine ) *roomController{
 	return &roomController{
 		ru: ru,
-		rg: rg,
+		rg: &rg.RouterGroup,
 	}
 }
