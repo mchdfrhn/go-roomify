@@ -2,7 +2,6 @@ package repository
 
 import (
 	"database/sql"
-	"fmt"
 	"go-roomify/model"
 	"go-roomify/model/dto"
 	"go-roomify/utils"
@@ -31,7 +30,6 @@ func (r *divisionRepository) GetAllDivisi(page, size int) ([]model.Division, dto
 		"name")
 	qselect.Limit(size)
 	qselect.Offset(skip)
-	fmt.Println(qselect.GetQuery())
 	rows, err := qselect.Run()
 	if err != nil {
 		return nil, dto.Paging{}, err
@@ -48,12 +46,10 @@ func (r *divisionRepository) GetAllDivisi(page, size int) ([]model.Division, dto
 		}
 		divisions = append(divisions, division)
 	}
-	fmt.Println(divisions)
 	var totalRows int
 	qcount := query.QSelect{DB: r.db}
 	qcount.Table("mst_division")
 	qcount.Column("COUNT(id)")
-	fmt.Println(qcount.GetQuery())
 
 	err = qcount.RunRow().Scan(&totalRows)
 	if err != nil {
