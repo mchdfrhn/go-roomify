@@ -7,7 +7,7 @@ import (
 )
 
 type QSelect struct {
-	DB *sql.DB
+	DB          *sql.DB
 	param_index int
 	param_value []any
 	qtable      string
@@ -62,36 +62,28 @@ func (self *QSelect) Join(tbl_name string, condition string) *QSelect {
 }
 
 func (self *QSelect) Limit(value int) *QSelect {
-	self.param_index += 1
-	self.param_value = append(self.param_value, value)
-	self.qlimit += fmt.Sprintf(" LIMIT $%d ", self.param_index)
+	self.qlimit = fmt.Sprintf(" LIMIT %d", value)
 	return self
 }
 
 func (self *QSelect) Offset(value int) *QSelect {
-	self.param_index += 1
-	self.param_value = append(self.param_value, value)
-	self.qlimit += fmt.Sprintf(" OFFSET $%d ", self.param_index)
+	self.qoffset = fmt.Sprintf(" OFFSET %d", value)
 	return self
 }
 
 func (self *QSelect) GroupBy(col_name string) *QSelect {
-	self.param_index += 1
-	self.param_value = append(self.param_value, col_name)
-	self.qlimit += fmt.Sprintf(" GROUP BY $%d", self.param_index)
+	self.qgroup = fmt.Sprintf(" GROUP BY %s", col_name)
 	return self
 }
 
 func (self *QSelect) OrderBy(value string, order string) *QSelect {
-	self.param_index += 1
-	self.param_value = append(self.param_value, value)
-	self.qlimit += fmt.Sprintf(" ORDER BY $%d %s", self.param_index, order)
+	self.qorder = fmt.Sprintf(" ORDER BY %s %s", value, order)
 	return self
 }
 
 func (self *QSelect) GetQuery() string {
-	query := fmt.Sprintf(" SELECT %s %s %s %s %s %s %s %s",
-		strings.Join(self.qcolumn, ","),
+	query := fmt.Sprintf("SELECT %s %s %s %s %s %s %s %s",
+		strings.Join(self.qcolumn, ", "),
 		self.qtable,
 		self.qjoin,
 		self.qwhere,
@@ -107,7 +99,7 @@ func (self *QSelect) Run() (*sql.Rows, error) {
 	return rows, err
 }
 
-func (self *QSelect) RunRow() (*sql.Row) {
+func (self *QSelect) RunRow() *sql.Row {
 	row := self.DB.QueryRow(self.GetQuery(), self.param_value...)
 	return row
 }

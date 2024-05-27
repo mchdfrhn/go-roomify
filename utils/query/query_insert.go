@@ -7,7 +7,7 @@ import (
 )
 
 type QInsert struct {
-	DB *sql.DB
+	DB          *sql.DB
 	param_index int
 	param_value []any
 	qtable      string
@@ -25,7 +25,7 @@ func (self *QInsert) Column(col_name ...string) *QInsert {
 	return self
 }
 
-func (self *QInsert) Values(col_value ...string) *QInsert {
+func (self *QInsert) Values(col_value ...any) *QInsert {
 	for _, value := range col_value {
 		self.param_index += 1
 		self.param_value = append(self.param_value, value)
@@ -51,7 +51,7 @@ func (self *QInsert) GetQueryReturn(col_return ...string) string {
 	return query
 }
 
-func (self *QInsert) RunReturn(col_return ...string) (*sql.Row) {
+func (self *QInsert) RunReturn(col_return ...string) *sql.Row {
 	row := self.DB.QueryRow(self.GetQueryReturn(col_return...), self.param_value...)
 	return row
 }
