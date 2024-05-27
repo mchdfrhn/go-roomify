@@ -27,11 +27,11 @@ func( rc *roomController ) createRoomHandler(ctx *gin.Context){
 		return
 	}
 
-	createdRoom, err := rc.ru.CreateRoom( roomRequest )
+	createdRoom, code, err := rc.ru.CreateRoom( roomRequest )
 	if err != nil {
 		response.SendSingleResponseError(
 			ctx,
-			http.StatusBadRequest,
+			code,
 			err.Error(),
 		)
 
@@ -46,9 +46,33 @@ func( rc *roomController ) createRoomHandler(ctx *gin.Context){
 	
 }
 
+func( rc *roomController ) getRoomByIdOrNameHandler(ctx *gin.Context){
+
+	roomIdOrName := ctx.Param("idOrName")
+
+	createdRoom, code, err := rc.ru.GetRoomByIdOrName( roomIdOrName )
+	if err != nil {
+		response.SendSingleResponseError(
+			ctx,
+			code,
+			err.Error(),
+		)
+
+		return
+	}
+
+	response.SendSingleResponseCreated(
+		ctx,
+		createdRoom,
+		"Success Get data Room",
+	)
+	
+}
+
 func( rc *roomController ) Route(){
 	group := rc.rg.Group("/room")
 	group.POST("/", rc.createRoomHandler)
+	group.GET("/:idOrName", rc.getRoomByIdOrNameHandler)
 }
 
 func NewRoomController( ru usecase.RoomUsecase, rg *gin.RouterGroup ) *roomController{

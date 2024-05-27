@@ -11,7 +11,7 @@ import (
 )
 
 type RoomUsecase interface{
-	CreateRoom( roomRequest request.RoomRequest ) ( model.Room, error )
+	CreateRoom( roomRequest request.RoomRequest ) ( model.Room, int, error )
 	GetRoomByIdOrName( idOrNameRoom string ) ( model.Room, int, error )
 }
 
@@ -19,23 +19,23 @@ type roomUsecase struct{
 	repo repository.RoomRepository
 }
 
-func ( ru *roomUsecase ) CreateRoom( roomRequest request.RoomRequest ) ( model.Room, error ){
+func ( ru *roomUsecase ) CreateRoom( roomRequest request.RoomRequest ) ( model.Room, int, error ){
 
 	if len( roomRequest.Name ) > 200 {
-		return model.Room{}, fmt.Errorf("name max 200 char")
+		return model.Room{}, http.StatusBadRequest, fmt.Errorf("name max 200 char")
 	}
 
 	if len( roomRequest.RoomType ) > 200 {
-		return model.Room{}, fmt.Errorf("room type max 200 char")
+		return model.Room{}, http.StatusBadRequest, fmt.Errorf("room type max 200 char")
 	}
 
 	roomId, err := ru.repo.GetRoomIdIfExist( roomRequest.Name, roomRequest.RoomType )
 	if err != nil {
-		return model.Room{}, err
+		return model.Room{}, http.StatusInternalServerError, err
 	}
 
 	if roomId != "" {
-		return model.Room{}, fmt.Errorf("a room with the same name and type already exists")
+		return model.Room{}, http.StatusConflict, fmt.Errorf("a room with the same name and type already exists")
 	}
 
 	roomModel := model.Room{
@@ -46,8 +46,12 @@ func ( ru *roomUsecase ) CreateRoom( roomRequest request.RoomRequest ) ( model.R
 		IsAvailable: false,
 	}
 
-	return ru.repo.CreateRoom( roomModel )
+	err = ru.repo.CreateRoom( roomModel )
+	if err != nil {
+		return model.Room{}, http.StatusInternalServerError, err
+	}
 
+	return roomModel, http.StatusCreated, nil
 }
 
 func ( ru *roomUsecase ) GetRoomByIdOrName( roomIdOrName string ) ( model.Room, int, error ){

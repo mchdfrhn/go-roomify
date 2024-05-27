@@ -7,7 +7,7 @@ import (
 )
 
 type RoomRepository interface{
-	CreateRoom( roomModel model.Room ) ( model.Room, error )
+	CreateRoom( roomModel model.Room ) error
 	GetRoomIdIfExist( name string, roomtype string ) ( string, error )
 	GetRoomByIdOrName( idOrNameRoom string ) ( model.Room, error )
 }
@@ -16,7 +16,7 @@ type roomRepository struct{
 	db *sql.DB
 }
 
-func ( rr *roomRepository ) CreateRoom( roomModel model.Room ) ( model.Room, error ){
+func ( rr *roomRepository ) CreateRoom( roomModel model.Room ) error {
 
 	query := query.QInsert{ DB: rr.db }
 
@@ -37,10 +37,10 @@ func ( rr *roomRepository ) CreateRoom( roomModel model.Room ) ( model.Room, err
 	).Run()
 
 	if err != nil {
-		return model.Room{}, err
+		return err
 	}
 	
-	return roomModel, nil
+	return nil
 }
 
 func ( rr *roomRepository ) GetRoomIdIfExist( name string, roomtype string ) ( string, error ){
@@ -73,7 +73,7 @@ func ( rr *roomRepository ) GetRoomByIdOrName( roomidOrName string ) ( model.Roo
 
 	query := query.QSelect{ DB: rr.db }
 	var findRoom model.Room
-	
+
 	err := query.Table( 
 		"mst_room",
 	).Column( 
