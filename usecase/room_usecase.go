@@ -5,12 +5,14 @@ import (
 	"go-roomify/model"
 	"go-roomify/model/dto/request"
 	"go-roomify/repository"
+	"net/http"
 
 	"github.com/google/uuid"
 )
 
 type RoomUsecase interface{
 	CreateRoom( roomRequest request.RoomRequest ) ( model.Room, error )
+	GetRoomByIdOrName( idOrNameRoom string ) ( model.Room, int, error )
 }
 
 type roomUsecase struct{
@@ -47,6 +49,22 @@ func ( ru *roomUsecase ) CreateRoom( roomRequest request.RoomRequest ) ( model.R
 	return ru.repo.CreateRoom( roomModel )
 
 }
+
+func ( ru *roomUsecase ) GetRoomByIdOrName( roomIdOrName string ) ( model.Room, int, error ){
+
+	findRoom, err := ru.repo.GetRoomByIdOrName( roomIdOrName )
+	if err != nil {
+		return model.Room{}, http.StatusInternalServerError, err
+	}
+
+	if findRoom.Id == "" {
+		return model.Room{}, http.StatusNotFound, fmt.Errorf("room not found")
+	}
+
+	return findRoom, http.StatusOK, nil
+
+}
+
 
 func NewRoomUsecase( repo repository.RoomRepository ) RoomUsecase{
 	return &roomUsecase{
