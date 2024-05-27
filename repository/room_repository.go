@@ -9,7 +9,7 @@ import (
 type RoomRepository interface{
 	CreateRoom( roomModel model.Room ) error
 	GetRoomIdIfExist( name string, roomtype string ) ( string, error )
-	GetRoomByIdOrName( idOrNameRoom string ) ( model.Room, error )
+	GetRoomByIdOrName( idOrNameRoom string ) ( []model.Room, error )
 }
 
 type roomRepository struct{
@@ -69,12 +69,12 @@ func ( rr *roomRepository ) GetRoomIdIfExist( name string, roomtype string ) ( s
 	return idRoom, nil
 }
 
-func ( rr *roomRepository ) GetRoomByIdOrName( roomidOrName string ) ( model.Room, error ){
+func ( rr *roomRepository ) GetRoomByIdOrName( roomidOrName string ) ( []model.Room, error ){
 
 	query := query.QSelect{ DB: rr.db }
-	var findRoom model.Room
+	var findRoom []model.Room
 
-	err := query.Table( 
+	rows, err := query.Table( 
 		"mst_room",
 	).Column( 
 		"id",
@@ -90,16 +90,27 @@ func ( rr *roomRepository ) GetRoomByIdOrName( roomidOrName string ) ( model.Roo
 		"name",
 		"=",
 		roomidOrName,
-	).RunRow().Scan( 
-		&findRoom.Id,
-		&findRoom.Name,
-		&findRoom.RoomType,
-		&findRoom.Capacity,
-		&findRoom.IsAvailable,
-	)
+	).Run()
+
+	for rows.Next() {
+		var dummyRoom model.Room
+		err = rows.Scan(
+			&dummyRoom.Id,
+			&dummyRoom.Name,
+			&dummyRoom.RoomType,
+			&dummyRoom.Capacity,
+			&dummyRoom.IsAvailable,
+		)
+		
+		if err != nil {
+			return nil, err
+		}
+
+		findRoom = append(findRoom, dummyRoom)
+	}
 
 	if err != nil {
-		return model.Room{}, nil
+		return nil, err
 	}
 	
 	return findRoom, nil

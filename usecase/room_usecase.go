@@ -12,7 +12,7 @@ import (
 
 type RoomUsecase interface{
 	CreateRoom( roomRequest request.RoomRequest ) ( model.Room, int, error )
-	GetRoomByIdOrName( idOrNameRoom string ) ( model.Room, int, error )
+	GetRoomByIdOrName( idOrNameRoom string ) ( []model.Room, int, error )
 }
 
 type roomUsecase struct{
@@ -54,15 +54,15 @@ func ( ru *roomUsecase ) CreateRoom( roomRequest request.RoomRequest ) ( model.R
 	return roomModel, http.StatusCreated, nil
 }
 
-func ( ru *roomUsecase ) GetRoomByIdOrName( roomIdOrName string ) ( model.Room, int, error ){
+func ( ru *roomUsecase ) GetRoomByIdOrName( roomIdOrName string ) ( []model.Room, int, error ){
 
 	findRoom, err := ru.repo.GetRoomByIdOrName( roomIdOrName )
 	if err != nil {
-		return model.Room{}, http.StatusInternalServerError, err
+		return nil, http.StatusInternalServerError, err
 	}
 
-	if findRoom.Id == "" {
-		return model.Room{}, http.StatusNotFound, fmt.Errorf("room not found")
+	if findRoom[0].Id == "" {
+		return nil, http.StatusNotFound, fmt.Errorf("room not found")
 	}
 
 	return findRoom, http.StatusOK, nil
