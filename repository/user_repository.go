@@ -2,8 +2,10 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"go-roomify/model"
 	"go-roomify/model/dto"
+	"go-roomify/model/dto/request"
 	"go-roomify/utils"
 	"go-roomify/utils/query"
 )
@@ -12,8 +14,8 @@ type UserProfileRepository interface {
 	GetList(page, size int) ([]model.UserProfile, dto.Paging, error)
 	GetById(id string) (model.UserProfile, error)
 	GetByUsername(username string) (model.UserProfile, error)
-	Create(payload model.UserProfile) (model.UserProfile, error)
-	Update(payload model.UserProfile) (model.UserProfile, error)
+	Create(user request.UserProfileRequest) (request.UserProfileRequest, error)
+	Update(user request.UserProfileRequest) (request.UserProfileRequest, error)
 	Delete(id string) error
 }
 
@@ -41,11 +43,13 @@ func (u *userProfileRepository) GetList(page, size int) ([]model.UserProfile, dt
 		"r.id",
 		"r.position",
 	)
-	qselect.Join("mst_division AS d", "ON up.division_id=d.id")
-	qselect.Join("users AS u", "ON up.user_id=u.id")
-	qselect.Join("mst_role AS r", "ON up.role_id=r.id")
+	qselect.Join("mst_division AS d", "up.division_id=d.id")
+	qselect.Join("users AS u", "up.user_id=u.id")
+	qselect.Join("mst_role AS r", "up.role_id=r.id")
 	qselect.Limit(size)
 	qselect.Offset(skip)
+
+	fmt.Println(qselect.GetQuery())
 
 	rows, err := qselect.Run()
 	if err != nil {
@@ -76,10 +80,12 @@ func (u *userProfileRepository) GetList(page, size int) ([]model.UserProfile, dt
 	}
 
 	var totalRows int
-	qselect.Table("mst_user_profile")
-	qselect.Column("COUNT (*)")
+	qcount := query.QSelect{DB: u.db}
+	qcount.Table("mst_user_profile")
+	qcount.Column("COUNT(id)")
+	fmt.Println(qcount.GetQuery())
 
-	err = qselect.RunRow().Scan(totalRows)
+	err = qcount.RunRow().Scan(&totalRows)
 	if err != nil {
 		return nil, dto.Paging{}, err
 	}
@@ -107,10 +113,10 @@ func (u *userProfileRepository) GetById(id string) (model.UserProfile, error) {
 		"r.id",
 		"r.position",
 	)
-	qselect.Join("mst_division AS d", "ON up.division_id=d.id")
-	qselect.Join("users AS u", "ON up.user_id=u.id")
-	qselect.Join("mst_role AS r", "ON up.role_id=r.id")
-	qselect.Where("id", "=", id)
+	qselect.Join("mst_division AS d", "up.division_id=d.id")
+	qselect.Join("users AS u", "up.user_id=u.id")
+	qselect.Join("mst_role AS r", "up.role_id=r.id")
+	qselect.Where("up.id", "=", id)
 
 	err := qselect.RunRow().Scan(
 		&user.Id,
@@ -152,9 +158,9 @@ func (u *userProfileRepository) GetByUsername(username string) (model.UserProfil
 		"r.id",
 		"r.position",
 	)
-	qselect.Join("mst_division AS d", "ON up.division_id=d.id")
-	qselect.Join("users AS u", "ON up.user_id=u.id")
-	qselect.Join("mst_role AS r", "ON up.role_id=r.id")
+	qselect.Join("mst_division AS d", "up.division_id=d.id")
+	qselect.Join("users AS u", "up.user_id=u.id")
+	qselect.Join("mst_role AS r", "up.role_id=r.id")
 	qselect.Where("username", "=", username)
 
 	err := qselect.RunRow().Scan(
@@ -178,7 +184,7 @@ func (u *userProfileRepository) GetByUsername(username string) (model.UserProfil
 	return user, nil
 }
 
-func (u *userProfileRepository) Create(payload model.UserProfile) (model.UserProfile, error) {
+func (u *userProfileRepository) Create(user request.UserProfileRequest) (request.UserProfileRequest, error) {
 	qinsert := query.QInsert{DB: u.db}
 
 	qinsert.Table("mst_user_profile")
@@ -192,39 +198,39 @@ func (u *userProfileRepository) Create(payload model.UserProfile) (model.UserPro
 		"role_id",
 	)
 	qinsert.Values(
-		payload.Id,
-		payload.FullName,
-		payload.Division.Id,
-		payload.Address,
-		payload.PhoneNumber,
-		payload.User.Id,
-		payload.Role.Id,
+		user.Id,
+		user.FullName,
+		user.DivisionId,
+		user.Address,
+		user.PhoneNumber,
+		user.UserId,
+		user.RoleId,
 	)
 
 	_, err := qinsert.Run()
 	if err != nil {
-		return model.UserProfile{}, err
+		return request.UserProfileRequest{}, err
 	}
 
-	return payload, nil
+	return user, nil
 }
 
-func (u *userProfileRepository) Update(payload model.UserProfile) (model.UserProfile, error) {
+func (u *userProfileRepository) Update(user request.UserProfileRequest) (request.UserProfileRequest, error) {
 	qupdate := query.QUpdate{DB: u.db}
 
 	qupdate.Table("mst_user_profile")
-	qupdate.Set("full_name", payload.FullName)
-	qupdate.Set("division_id", payload.Division.Id)
-	qupdate.Set("address", payload.Address)
-	qupdate.Set("phone_number", payload.PhoneNumber)
-	qupdate.Set("role_id", payload.Role.Id)
+	qupdate.Set("full_name", user.FullName)
+	qupdate.Set("division_id", user.DivisionId)
+	qupdate.Set("address", user.Address)
+	qupdate.Set("phone_number", user.PhoneNumber)
+	qupdate.Set("role_id", user.RoleId)
 
 	_, err := qupdate.Run()
 	if err != nil {
-		return model.UserProfile{}, err
+		return request.UserProfileRequest{}, err
 	}
 
-	return payload, nil
+	return user, nil
 }
 
 func (u *userProfileRepository) Delete(id string) error {
