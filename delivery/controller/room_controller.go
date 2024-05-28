@@ -47,6 +47,64 @@ func( rc *roomController ) createRoomHandler(ctx *gin.Context){
 	
 }
 
+func( rc *roomController ) getAllroomHandler(ctx *gin.Context){
+
+	paramPage := ctx.Query("page")
+	paramSize := ctx.Query("size")
+
+	// page := 1
+	// size := 10
+
+	// if dummyPage != "" {
+	// 	castingPage, err := strconv.Atoi( dummyPage )
+	// 	if err != nil || castingPage <= 0 {
+	// 		response.SendSingleResponseError(
+	// 			ctx,
+	// 			http.StatusBadRequest,
+	// 			err.Error(),
+	// 		)
+	
+	// 		return
+	// 	}
+
+	// 	page = castingPage
+	// }
+
+	// if dummySize != "" {
+	// 	castingSize, err := strconv.Atoi( dummySize )
+	// 	if err != nil || castingSize <= 0 {
+	// 		response.SendSingleResponseError(
+	// 			ctx,
+	// 			http.StatusBadRequest,
+	// 			err.Error(),
+	// 		)
+	
+	// 		return
+	// 	}
+
+	// 	size = castingSize
+	// }
+
+	room, paging, code, err := rc.ru.GetAllRoom( paramPage, paramSize )
+	if err != nil {
+		response.SendSingleResponseError(
+			ctx,
+			code,
+			err.Error(),
+		)
+
+		return
+	}
+
+	response.SendSinglePageResponse(
+		ctx,
+		room,
+		"Success Get All Room",
+		paging,
+	)
+
+}
+
 func( rc *roomController ) getRoomByIdOrNameHandler(ctx *gin.Context){
 
 	roomIdOrName := ctx.Param("idOrName")
@@ -128,6 +186,7 @@ func( rc *roomController ) deleteRoomByIdHandler(ctx *gin.Context){
 func( rc *roomController ) Route(){
 	group := rc.rg.Group("/room")
 	group.POST("/", rc.createRoomHandler)
+	group.GET("/", rc.getAllroomHandler)
 	group.GET("/:idOrName", rc.getRoomByIdOrNameHandler)
 	group.PUT("/", rc.updateRoomByIdHandler)
 	group.DELETE("/:id", rc.deleteRoomByIdHandler)

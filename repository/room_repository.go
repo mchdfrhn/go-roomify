@@ -3,12 +3,15 @@ package repository
 import (
 	"database/sql"
 	"go-roomify/model"
+	"go-roomify/model/dto"
+	"go-roomify/utils"
 	"go-roomify/utils/query"
 )
 
 type RoomRepository interface{
 	CreateRoom( roomModel model.Room ) error
 	GetRoomIdIfExist( name string, roomtype string ) ( string, error )
+	GetAllRoom(page int, size int) ( []any, dto.Paging, error )
 	GetRoomByIdOrName( idOrNameRoom string ) ( []model.Room, error )
 	UpdateRoomById( updateRoom model.Room ) ( model.Room, error )
 	DeleteRoomById( roomId string ) error 
@@ -69,6 +72,65 @@ func ( rr *roomRepository ) GetRoomIdIfExist( name string, roomtype string ) ( s
 	}
 	
 	return idRoom, nil
+}
+
+func ( rr *roomRepository ) GetAllRoom(page int, size int) ( []any, dto.Paging, error ){
+
+	
+	skip := ( page - 1 ) * size
+	var allRoom []any
+	queryAllRoom := query.QSelect{ DB: rr.db }
+
+	rows, err := queryAllRoom.Table(
+		"mst_room",
+	).Column(
+		"id", 
+		"name", 
+		"roomtype", 
+		"capacity",
+		"is_available",
+	).Limit(
+		size,
+	).Offset(
+		skip,
+	).Run()
+
+	if err != nil {
+		return nil, dto.Paging{}, err
+	}
+
+	for rows.Next() {
+		var dummyRoom model.Room
+		err = rows.Scan(
+			&dummyRoom.Id,
+			&dummyRoom.Name,
+			&dummyRoom.RoomType,
+			&dummyRoom.Capacity,
+			&dummyRoom.IsAvailable,
+		)
+		
+		if err != nil {
+			return nil, dto.Paging{}, err
+		}
+
+		allRoom = append(allRoom, dummyRoom)
+	}
+
+	var totalRows int
+	queryCount := query.QSelect{ DB: rr.db }
+	err = queryCount.Table(
+		"mst_room",
+	).Column(
+		"COUNT(id)",
+	).RunRow().Scan( &totalRows )
+
+	if err != nil {
+		return nil, dto.Paging{}, err
+	}
+
+	resultPagingDto := utils.Paginate(page, size, totalRows)
+	return allRoom, resultPagingDto, nil
+
 }
 
 func ( rr *roomRepository ) GetRoomByIdOrName( roomidOrName string ) ( []model.Room, error ){

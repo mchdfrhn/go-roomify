@@ -3,15 +3,18 @@ package usecase
 import (
 	"fmt"
 	"go-roomify/model"
+	"go-roomify/model/dto"
 	"go-roomify/model/dto/request"
 	"go-roomify/repository"
 	"net/http"
+	"strconv"
 
 	"github.com/google/uuid"
 )
 
 type RoomUsecase interface{
 	CreateRoom( roomRequest request.RoomRequest ) ( model.Room, int, error )
+	GetAllRoom( paramPage string, paramSize string ) ( []any, dto.Paging, int, error ) 
 	GetRoomByIdOrName( idOrNameRoom string ) ( []model.Room, int, error )
 	UpdateRoomById( updateRoomRequest model.Room ) ( model.Room, int, error )
 	DeleteRooomById( roomId string ) ( int, error )
@@ -54,6 +57,42 @@ func ( ru *roomUsecase ) CreateRoom( roomRequest request.RoomRequest ) ( model.R
 	}
 
 	return roomModel, http.StatusCreated, nil
+}
+
+func ( ru *roomUsecase ) GetAllRoom( paramPage string, paramSize string ) ( []any, dto.Paging, int, error ){
+
+	page := 1
+	size := 10
+
+	if paramPage != "" {
+		castingPage, err := strconv.Atoi( paramPage )
+		if err != nil {
+			return nil, dto.Paging{}, http.StatusBadRequest, err
+		}
+		
+		page = castingPage
+	}
+
+	if paramSize != "" {
+		castingSize, err := strconv.Atoi( paramSize )
+		if err != nil{
+			return nil, dto.Paging{}, http.StatusBadRequest, err
+		}
+
+		size = castingSize
+	}
+
+	if page <= 0 || size <= 0 {
+		return nil, dto.Paging{}, http.StatusBadRequest, fmt.Errorf("page or size number must be a positive integer")
+	}
+
+	allRoom, paging, err := ru.repo.GetAllRoom( page, size )
+	if err != nil {
+		return nil, dto.Paging{}, http.StatusInternalServerError, err
+	}
+
+	return allRoom, paging, http.StatusOK, nil
+
 }
 
 func ( ru *roomUsecase ) GetRoomByIdOrName( roomIdOrName string ) ( []model.Room, int, error ){
@@ -110,8 +149,6 @@ func ( ru *roomUsecase ) DeleteRooomById( roomId string ) ( int, error ){
 	return http.StatusOK, nil
 
 }
-
-
 
 func NewRoomUsecase( repo repository.RoomRepository ) RoomUsecase{
 	return &roomUsecase{
