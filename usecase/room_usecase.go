@@ -61,7 +61,7 @@ func ( ru *roomUsecase ) GetRoomByIdOrName( roomIdOrName string ) ( []model.Room
 		return nil, http.StatusInternalServerError, err
 	}
 
-	if findRoom[0].Id == "" {
+	if len(findRoom) == 0 {
 		return nil, http.StatusNotFound, fmt.Errorf("room not found")
 	}
 

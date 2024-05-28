@@ -92,6 +92,10 @@ func ( rr *roomRepository ) GetRoomByIdOrName( roomidOrName string ) ( []model.R
 		roomidOrName,
 	).Run()
 
+	if err != nil {
+		return nil, err
+	}
+
 	for rows.Next() {
 		var dummyRoom model.Room
 		err = rows.Scan(
@@ -107,10 +111,6 @@ func ( rr *roomRepository ) GetRoomByIdOrName( roomidOrName string ) ( []model.R
 		}
 
 		findRoom = append(findRoom, dummyRoom)
-	}
-
-	if err != nil {
-		return nil, err
 	}
 	
 	return findRoom, nil
