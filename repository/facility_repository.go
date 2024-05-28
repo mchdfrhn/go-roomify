@@ -157,7 +157,7 @@ func (f *facilityRepository) UpdateFacility(newFacility model.Facility) error {
 	qupdate.Table("mst_facility")
 	qupdate.Set("name", newFacility.Name)
 	qupdate.Set("room_id", newFacility.RoomId)
-	qupdate.Set("id", newFacility.Id)
+	qupdate.Where("id", "=", newFacility.Id)
 
 	fmt.Println(qupdate.GetQuery())
 	_, err := qupdate.Run()
