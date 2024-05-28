@@ -6,8 +6,6 @@ import (
 	"go-roomify/model/dto"
 	"go-roomify/utils"
 	"go-roomify/utils/query"
-
-	"github.com/gin-gonic/gin"
 )
 
 type RoleRepository interface {
@@ -15,7 +13,7 @@ type RoleRepository interface {
 	InsertRole(newRole model.Role) error
 	UpdateRole(newRole model.Role) error
 	GetRoleById(id string) (model.Role, error)
-	DeleteRoleById(ctx *gin.Context, id string) error
+	DeleteRoleById(id string) error
 	GetListPaging(page int, size int) ([]model.Role, dto.Paging, error)
 }
 
@@ -26,7 +24,7 @@ type roleRepository struct {
 func (r *roleRepository) GetListPaging(page int, size int) ([]model.Role, dto.Paging, error) {
 	skip := (page - 1) * size
 	qSelect := &query.QSelect{DB: r.db}
-	qSelect.Table("roles").
+	qSelect.Table("mst_role").
 		Column("id", "position").
 		Limit(size).
 		Offset(skip)
@@ -51,7 +49,7 @@ func (r *roleRepository) GetListPaging(page int, size int) ([]model.Role, dto.Pa
 	}
 
 	var totalRows int
-	err = r.db.QueryRow("SELECT COUNT(*) FROM roles").Scan(&totalRows)
+	err = r.db.QueryRow("SELECT COUNT(*) FROM mst_role").Scan(&totalRows)
 	if err != nil {
 		return nil, dto.Paging{}, err
 	}
@@ -61,9 +59,9 @@ func (r *roleRepository) GetListPaging(page int, size int) ([]model.Role, dto.Pa
 
 func (r *roleRepository) UpdateRole(newRole model.Role) error {
 	qUpdate := &query.QUpdate{DB: r.db}
-	qUpdate.Table("roles").
+	qUpdate.Table("mst_role").
 		Set("position", newRole.Position).
-		Where("id", "-", newRole.Id)
+		Where("id", "=", newRole.Id)
 
 	_, err := qUpdate.Run()
 	if err != nil {
@@ -74,9 +72,9 @@ func (r *roleRepository) UpdateRole(newRole model.Role) error {
 
 func (r *roleRepository) GetRoleById(id string) (model.Role, error) {
 	qSelect := &query.QSelect{DB: r.db}
-	qSelect.Table("roles").
+	qSelect.Table("mst_role").
 		Column("id", "position").
-		Where("id", "-", id)
+		Where("id", "=", id)
 
 	row := qSelect.RunRow()
 	var role model.Role
@@ -91,9 +89,9 @@ func (r *roleRepository) GetRoleById(id string) (model.Role, error) {
 	return role, nil
 }
 
-func (r *roleRepository) DeleteRoleById(ctx *gin.Context, id string) error {
+func (r *roleRepository) DeleteRoleById(id string) error {
 	qDelete := &query.QDelete{DB: r.db}
-	qDelete.Table("roles").Where("id", "=", id)
+	qDelete.Table("mst_role").Where("id", "=", id)
 
 	_, err := qDelete.Run()
 	if err != nil {
@@ -110,7 +108,7 @@ func newRoleRepository(db *sql.DB) RoleRepository {
 
 func (r *roleRepository) GetListRole() ([]model.Role, error) {
 	qSelect := &query.QSelect{DB: r.db}
-	qSelect.Table("roles").
+	qSelect.Table("mst_role").
 		Column("id", "position")
 
 	rows, err := qSelect.Run()
@@ -136,7 +134,7 @@ func (r *roleRepository) GetListRole() ([]model.Role, error) {
 
 func (r *roleRepository) InsertRole(newRole model.Role) error {
 	qInsert := query.QInsert{DB: r.db}
-	qInsert.Table("roles").
+	qInsert.Table("mst_role").
 		Column("id", "position").
 		Values(newRole.Id, newRole.Position)
 
@@ -146,6 +144,12 @@ func (r *roleRepository) InsertRole(newRole model.Role) error {
 		return err
 	}
 	return nil
+}
+
+func NewRoleRepository(db *sql.DB) RoleRepository {
+	return &roleRepository{
+		db: db,
+	}
 }
 
 // ada kebutuhan pengambilan data/query -> Query(list) /QueryRow(single Value)

@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"go-roomify/middleware"
 	"go-roomify/model"
 	"go-roomify/model/dto/response"
 	"go-roomify/usecase"
@@ -13,9 +12,9 @@ import (
 )
 
 type RoleController struct {
-	uc             usecase.RoleUsecase
-	rg             *gin.RouterGroup
-	authMiddleware middleware.AuthMiddleware
+	uc usecase.RoleUsecase
+	rg *gin.RouterGroup
+	// authMiddleware middleware.AuthMiddleware
 }
 
 func (rc *RoleController) registerHandler(ctx *gin.Context) {
@@ -82,14 +81,14 @@ func (rc *RoleController) findByIdHandler(ctx *gin.Context) {
 }
 
 func (rc *RoleController) deleteByIdHandler(ctx *gin.Context) {
-	id := ctx.Query("id")
+	id := ctx.Param("id")
 	if id == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"message": "Missing id parameter",
 		})
 		return
 	}
-	err := rc.uc.DeleteRoleById(ctx, id)
+	err := rc.uc.DeleteRoleById(id)
 	if err != nil {
 		ctx.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -122,7 +121,7 @@ func (rc *RoleController) updateHandler(ctx *gin.Context) {
 
 func (rc *RoleController) Route() {
 	router := rc.rg.Group("/roles")
-	router.Use(rc.authMiddleware.RequireToken("ADMIN"))
+	// router.Use(rc.authMiddleware.RequireToken("ADMIN"))
 	router.POST("", rc.registerHandler)
 	router.GET("", rc.findAllPageHandler)
 	router.GET("/:id", rc.findByIdHandler)
@@ -133,11 +132,11 @@ func (rc *RoleController) Route() {
 func NewRoleController(
 	uc usecase.RoleUsecase,
 	router *gin.Engine,
-	authMiddleware middleware.AuthMiddleware,
+	//authMiddleware middleware.AuthMiddleware,
 ) *RoleController {
 	return &RoleController{
-		uc:             uc,
-		rg:             &router.RouterGroup,
-		authMiddleware: authMiddleware,
+		uc: uc,
+		rg: &router.RouterGroup,
+		// authMiddleware: authMiddleware,
 	}
 }

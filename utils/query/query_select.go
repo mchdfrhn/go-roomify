@@ -62,28 +62,36 @@ func (self *QSelect) Join(tbl_name string, condition string) *QSelect {
 }
 
 func (self *QSelect) Limit(value int) *QSelect {
-	self.qlimit = fmt.Sprintf(" LIMIT %d", value)
+	self.param_index += 1
+	self.param_value = append(self.param_value, value)
+	self.qlimit += fmt.Sprintf(" LIMIT $%d ", self.param_index)
 	return self
 }
 
 func (self *QSelect) Offset(value int) *QSelect {
-	self.qoffset = fmt.Sprintf(" OFFSET %d", value)
+	self.param_index += 1
+	self.param_value = append(self.param_value, value)
+	self.qlimit += fmt.Sprintf(" OFFSET $%d ", self.param_index)
 	return self
 }
 
 func (self *QSelect) GroupBy(col_name string) *QSelect {
-	self.qgroup = fmt.Sprintf(" GROUP BY %s", col_name)
+	self.param_index += 1
+	self.param_value = append(self.param_value, col_name)
+	self.qlimit += fmt.Sprintf(" GROUP BY $%d", self.param_index)
 	return self
 }
 
 func (self *QSelect) OrderBy(value string, order string) *QSelect {
-	self.qorder = fmt.Sprintf(" ORDER BY %s %s", value, order)
+	self.param_index += 1
+	self.param_value = append(self.param_value, value)
+	self.qlimit += fmt.Sprintf(" ORDER BY $%d %s", self.param_index, order)
 	return self
 }
 
 func (self *QSelect) GetQuery() string {
-	query := fmt.Sprintf("SELECT %s %s %s %s %s %s %s %s",
-		strings.Join(self.qcolumn, ", "),
+	query := fmt.Sprintf(" SELECT %s %s %s %s %s %s %s %s",
+		strings.Join(self.qcolumn, ","),
 		self.qtable,
 		self.qjoin,
 		self.qwhere,

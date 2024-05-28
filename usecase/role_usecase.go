@@ -4,8 +4,6 @@ import (
 	"go-roomify/model"
 	"go-roomify/model/dto"
 	"go-roomify/repository"
-
-	"github.com/gin-gonic/gin"
 )
 
 type RoleUsecase interface { // layer untuk komunikasi | jembatan antar layer
@@ -13,7 +11,7 @@ type RoleUsecase interface { // layer untuk komunikasi | jembatan antar layer
 	FindAllRole() ([]model.Role, error)
 	UpdateRole(newRole model.Role) error
 	FindRoleById(id string) (model.Role, error)
-	DeleteRoleById(cxt *gin.Context, id string) error
+	DeleteRoleById(id string) error
 	FindAllPaging(page int, size int) ([]model.Role, dto.Paging, error)
 }
 
@@ -25,8 +23,8 @@ func (r *roleUsecase) FindAllPaging(page int, size int) ([]model.Role, dto.Pagin
 	return r.repo.GetListPaging(page, size)
 }
 
-func (r *roleUsecase) DeleteRoleById(ctx *gin.Context, id string) error {
-	return r.repo.DeleteRoleById(ctx, id)
+func (r *roleUsecase) DeleteRoleById(id string) error {
+	return r.repo.DeleteRoleById(id)
 }
 
 func (r *roleUsecase) FindRoleById(id string) (model.Role, error) {

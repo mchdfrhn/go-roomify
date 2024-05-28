@@ -19,7 +19,7 @@ type facilityUsecase struct {
 	repo repository.FacilityRepository
 }
 
-func NewFacilityUseCase(repo repository.FacilityRepository) FacilityUsecase {
+func NewFacilityUsecase(repo repository.FacilityRepository) FacilityUsecase {
 	return &facilityUsecase{
 		repo: repo,
 	}

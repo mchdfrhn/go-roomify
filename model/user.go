@@ -10,10 +10,10 @@ type UserProfile struct {
 	Role        Role     `json:"role" binding:"required"`
 }
 
-type Division struct {
-	Id   string `json:"id" binding:"required"`
-	Name string `json:"name" binding:"required"`
-}
+// type Division struct {
+// 	Id   string `json:"id" binding:"required"`
+// 	Name string `json:"name" binding:"required"`
+// }
 
 type User struct {
 	Id       string `json:"id" binding:"required"`
@@ -22,7 +22,7 @@ type User struct {
 	Token    string `json:"token" binding:"required"`
 }
 
-type Role struct {
-	Id string `json:"id" binding:"required"`
-	Position string `json:"position" binding:"required"`
-}
+// type Role struct {
+// 	Id string `json:"id" binding:"required"`
+// 	Position string `json:"position" binding:"required"`
+// }
