@@ -13,6 +13,7 @@ import (
 type RoomUsecase interface{
 	CreateRoom( roomRequest request.RoomRequest ) ( model.Room, int, error )
 	GetRoomByIdOrName( idOrNameRoom string ) ( []model.Room, int, error )
+	UpdateRoomById( updateRoomRequest model.Room ) ( model.Room, int, error )
 }
 
 type roomUsecase struct{
@@ -68,6 +69,31 @@ func ( ru *roomUsecase ) GetRoomByIdOrName( roomIdOrName string ) ( []model.Room
 	return findRoom, http.StatusOK, nil
 
 }
+
+func ( ru *roomUsecase ) UpdateRoomById( updateRoom model.Room ) ( model.Room, int, error ){
+
+	if len( updateRoom.Name ) > 200 {
+		return model.Room{}, http.StatusBadRequest, fmt.Errorf("name max 200 char")
+	}
+
+	if len( updateRoom.RoomType ) > 200 {
+		return model.Room{}, http.StatusBadRequest, fmt.Errorf("room type max 200 char")
+	}
+
+	_, status, err := ru.GetRoomByIdOrName( updateRoom.Id )
+	if err != nil {
+		return model.Room{}, status, err
+	}
+
+	updatedRoom, err := ru.repo.UpdateRoomById( updateRoom )
+	if err != nil {
+		return model.Room{}, http.StatusInternalServerError, err
+	}
+
+	return updatedRoom, http.StatusOK, nil
+
+}
+
 
 
 func NewRoomUsecase( repo repository.RoomRepository ) RoomUsecase{

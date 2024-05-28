@@ -10,6 +10,7 @@ type RoomRepository interface{
 	CreateRoom( roomModel model.Room ) error
 	GetRoomIdIfExist( name string, roomtype string ) ( string, error )
 	GetRoomByIdOrName( idOrNameRoom string ) ( []model.Room, error )
+	UpdateRoomById( updateRoom model.Room ) ( model.Room, error )
 }
 
 type roomRepository struct{
@@ -114,6 +115,37 @@ func ( rr *roomRepository ) GetRoomByIdOrName( roomidOrName string ) ( []model.R
 	}
 	
 	return findRoom, nil
+}
+
+func ( rr *roomRepository ) UpdateRoomById( updateRoom model.Room ) ( model.Room, error ){
+
+	query := query.QUpdate{ DB: rr.db }
+
+	_, err := query.Table(
+		"mst_room",
+	).Set(
+		"name",
+		updateRoom.Name,
+	).Set(
+		"roomtype",
+		updateRoom.RoomType,
+	).Set(
+		"capacity",
+		updateRoom.Capacity,
+	).Set(
+		"is_available",
+		updateRoom.IsAvailable,
+	).Where(
+		"id",
+		"=",
+		updateRoom.Id,
+	).Run()
+
+	if err != nil {
+		return model.Room{}, err
+	}
+
+	return updateRoom, nil
 }
 
 func NewRoomRepository( db *sql.DB ) RoomRepository{
