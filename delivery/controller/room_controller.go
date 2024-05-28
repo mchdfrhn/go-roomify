@@ -62,7 +62,7 @@ func( rc *roomController ) getRoomByIdOrNameHandler(ctx *gin.Context){
 		return
 	}
 
-	response.SendSingleResponseCreated(
+	response.SendSingleResponse(
 		ctx,
 		createdRoom,
 		"Success Get data Room",
@@ -94,7 +94,7 @@ func( rc *roomController ) updateRoomByIdHandler(ctx *gin.Context){
 		return
 	}
 
-	response.SendSingleResponseCreated(
+	response.SendSingleResponse(
 		ctx,
 		updatedRoom,
 		"Success Update Room",
