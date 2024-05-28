@@ -7,7 +7,7 @@ import (
 )
 
 type QUpdate struct {
-	DB *sql.DB
+	DB          *sql.DB
 	param_index int
 	param_value []any
 	qtable      string
