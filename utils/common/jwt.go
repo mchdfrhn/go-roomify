@@ -17,7 +17,7 @@ type JwtClaim struct {
 }
 
 type JwtToken interface {
-	GenerateTokenJwt(user_data model.UserCredential) (string, error)
+	GenerateTokenJwt(user_data model.UserCredentialJwt) (string, error)
 	VerifyToken(token_string string) (jwt.MapClaims, error)
 }
 
@@ -25,7 +25,7 @@ type jwtToken struct {
 	config config.TokenConfig
 }
 
-func (self *jwtToken) GenerateTokenJwt(user_cr model.UserCredential) (string, error) {
+func (self *jwtToken) GenerateTokenJwt(user_cr model.UserCredentialJwt) (string, error) {
 	claims := JwtClaim{
 		StandardClaims: jwt.StandardClaims{
 			Issuer:    self.config.IssuerName,

@@ -20,7 +20,7 @@ func (self *QUpdate) Table(tbl_name string) *QUpdate {
 	return self
 }
 
-func (self *QUpdate) Set(col_name string, value string) *QUpdate {
+func (self *QUpdate) Set(col_name string, value any) *QUpdate {
 	self.param_index += 1
 	self.param_value = append(self.param_value, value)
 	self.qset = append(self.qset, fmt.Sprintf("%s = $%d", col_name, self.param_index))
