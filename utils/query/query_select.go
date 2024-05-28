@@ -111,4 +111,3 @@ func (self *QSelect) RunRow() (*sql.Row) {
 	row := self.DB.QueryRow(self.GetQuery(), self.param_value...)
 	return row
 }
-
