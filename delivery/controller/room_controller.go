@@ -52,39 +52,6 @@ func( rc *roomController ) getAllroomHandler(ctx *gin.Context){
 	paramPage := ctx.Query("page")
 	paramSize := ctx.Query("size")
 
-	// page := 1
-	// size := 10
-
-	// if dummyPage != "" {
-	// 	castingPage, err := strconv.Atoi( dummyPage )
-	// 	if err != nil || castingPage <= 0 {
-	// 		response.SendSingleResponseError(
-	// 			ctx,
-	// 			http.StatusBadRequest,
-	// 			err.Error(),
-	// 		)
-	
-	// 		return
-	// 	}
-
-	// 	page = castingPage
-	// }
-
-	// if dummySize != "" {
-	// 	castingSize, err := strconv.Atoi( dummySize )
-	// 	if err != nil || castingSize <= 0 {
-	// 		response.SendSingleResponseError(
-	// 			ctx,
-	// 			http.StatusBadRequest,
-	// 			err.Error(),
-	// 		)
-	
-	// 		return
-	// 	}
-
-	// 	size = castingSize
-	// }
-
 	room, paging, code, err := rc.ru.GetAllRoom( paramPage, paramSize )
 	if err != nil {
 		response.SendSingleResponseError(
