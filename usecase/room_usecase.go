@@ -14,6 +14,7 @@ type RoomUsecase interface{
 	CreateRoom( roomRequest request.RoomRequest ) ( model.Room, int, error )
 	GetRoomByIdOrName( idOrNameRoom string ) ( []model.Room, int, error )
 	UpdateRoomById( updateRoomRequest model.Room ) ( model.Room, int, error )
+	DeleteRooomById( roomId string ) ( int, error )
 }
 
 type roomUsecase struct{
@@ -91,6 +92,22 @@ func ( ru *roomUsecase ) UpdateRoomById( updateRoom model.Room ) ( model.Room, i
 	}
 
 	return updatedRoom, http.StatusOK, nil
+
+}
+
+func ( ru *roomUsecase ) DeleteRooomById( roomId string ) ( int, error ){
+
+	_, status, err := ru.GetRoomByIdOrName( roomId )
+	if err != nil {
+		return status, err
+	}
+
+	err = ru.repo.DeleteRoomById( roomId )
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
 
 }
 

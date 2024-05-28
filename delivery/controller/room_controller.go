@@ -102,11 +102,35 @@ func( rc *roomController ) updateRoomByIdHandler(ctx *gin.Context){
 
 }
 
+func( rc *roomController ) deleteRoomByIdHandler(ctx *gin.Context){
+
+	roomId := ctx.Param("id")
+
+	code, err := rc.ru.DeleteRooomById( roomId )
+	if err != nil {
+		response.SendSingleResponseError(
+			ctx,
+			code,
+			err.Error(),
+		)
+
+		return
+	}
+
+	response.SendSingleResponse(
+		ctx,
+		code,
+		"Success delete data Room",
+	)
+	
+}
+
 func( rc *roomController ) Route(){
 	group := rc.rg.Group("/room")
 	group.POST("/", rc.createRoomHandler)
 	group.GET("/:idOrName", rc.getRoomByIdOrNameHandler)
 	group.PUT("/", rc.updateRoomByIdHandler)
+	group.DELETE("/:id", rc.deleteRoomByIdHandler)
 }
 
 func NewRoomController( ru usecase.RoomUsecase, rg *gin.Engine ) *roomController{

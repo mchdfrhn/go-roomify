@@ -11,6 +11,7 @@ type RoomRepository interface{
 	GetRoomIdIfExist( name string, roomtype string ) ( string, error )
 	GetRoomByIdOrName( idOrNameRoom string ) ( []model.Room, error )
 	UpdateRoomById( updateRoom model.Room ) ( model.Room, error )
+	DeleteRoomById( roomId string ) error 
 }
 
 type roomRepository struct{
@@ -146,6 +147,26 @@ func ( rr *roomRepository ) UpdateRoomById( updateRoom model.Room ) ( model.Room
 	}
 
 	return updateRoom, nil
+}
+
+func ( rr *roomRepository ) DeleteRoomById( roomId string ) error {
+
+	query := query.QDelete{ DB: rr.db }
+
+	_, err := query.Table(
+		"mst_room",
+	).Where(
+		"id",
+		"=",
+		roomId,
+	).Run()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 func NewRoomRepository( db *sql.DB ) RoomRepository{
