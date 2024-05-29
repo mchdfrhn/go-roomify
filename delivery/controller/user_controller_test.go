@@ -110,15 +110,27 @@ type UserControllerTestSuite struct {
 }
 
 func (u *UsecaseMock) GetList(page, size int) ([]model.UserProfile, dto.Paging, error) {
-	return []model.UserProfile{}, dto.Paging{}, nil
+	args := u.Called()
+	if args.Get(2) != nil {
+		return []model.UserProfile{}, dto.Paging{}, args.Error(2)
+	}
+	return args.Get(0).([]model.UserProfile), dto.Paging{}, nil
 }
 
 func (u *UsecaseMock) GetById(id string) (model.UserProfile, error) {
-	return model.UserProfile{}, nil
+	args := u.Called(id)
+	if args.Get(1) != nil {
+		return model.UserProfile{}, args.Error(1)
+	}
+	return args.Get(0).(model.UserProfile), nil
 }
 
 func (u *UsecaseMock) GetByUsername(username string) (model.UserProfile, error) {
-	return model.UserProfile{}, nil
+	args := u.Called(username)
+	if args.Get(1) != nil {
+		return model.UserProfile{}, args.Error(1)
+	}
+	return args.Get(0).(model.UserProfile), nil
 }
 
 func (u *UsecaseMock) Create(newUser request.UserProfileRequest) (request.UserProfileRequest, error) {
@@ -145,6 +157,85 @@ func (u *UsecaseMock) Delete(id string) error {
 	return nil
 }
 
+func (suite *UserControllerTestSuite) TestGetListHandler_Success() {
+	suite.usecaseMock.On("GetList").Return(UserProfiles, dto.Paging{}, nil)
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodGet, "/user", nil)
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = request
+
+	suite.controller.findAllPageHandler(ctx)
+
+	assert.Equal(suite.T(), http.StatusOK, recorder.Code)
+}
+
+func (suite *UserControllerTestSuite) TestGetListHandler_Fail() {
+	expectErr := errors.New("Failed")
+	suite.usecaseMock.On("GetList").Return([]model.UserProfile{}, dto.Paging{}, expectErr)
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodGet, "/user", nil)
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = request
+
+	suite.controller.findAllPageHandler(ctx)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, recorder.Code)
+}
+
+func (suite *UserControllerTestSuite) TestGetByIdHandler_Success() {
+	suite.usecaseMock.On("GetById", UserProfile1.Id).Return(UserProfile1, nil)
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodGet, "/user/"+UserProfile1.Id, nil)
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = request
+	ctx.AddParam("id", UserProfile1.Id)
+
+	suite.controller.findByIdHandler(ctx)
+
+	assert.Equal(suite.T(), http.StatusOK, recorder.Code)
+}
+
+func (suite *UserControllerTestSuite) TestGetByIdHandler_Fail() {
+	expectErr := errors.New("Failed")
+	suite.usecaseMock.On("GetById", UserProfile1.Id).Return(model.UserProfile{}, expectErr)
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodGet, "/user/"+UserProfile1.Id, nil)
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = request
+	ctx.AddParam("id", UserProfile1.Id)
+
+	suite.controller.findByIdHandler(ctx)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, recorder.Code)
+}
+
+func (suite *UserControllerTestSuite) TestGetByUsernameHandler_Success() {
+	suite.usecaseMock.On("GetByUsername", UserProfile1.User.Username).Return(UserProfile1, nil)
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodGet, "/user/"+UserProfile1.User.Username, nil)
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = request
+	ctx.AddParam("username", UserProfile1.User.Username)
+
+	suite.controller.findByUsernameHandler(ctx)
+
+	assert.Equal(suite.T(), http.StatusOK, recorder.Code)
+}
+
+func (suite *UserControllerTestSuite) TestGetByUsernameHandler_Fail() {
+	expectErr := errors.New("Failed")
+	suite.usecaseMock.On("GetByUsername", UserProfile1.User.Username).Return(model.UserProfile{}, expectErr)
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodGet, "/user/"+UserProfile1.User.Username, nil)
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = request
+	ctx.AddParam("username", UserProfile1.User.Username)
+
+	suite.controller.findByUsernameHandler(ctx)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, recorder.Code)
+}
+
 func (suite *UserControllerTestSuite) TestRegisterHandler_Success() {
 	// Set SEED
 	my_rand := rand.New(rand.NewSource(42))
@@ -167,7 +258,7 @@ func (suite *UserControllerTestSuite) TestRegisterHandler_Success() {
 	var response response.SingleResponse
 	json.Unmarshal([]byte(recorder.Body.Bytes()), &response)
 
-	assert.Equal(suite.T(), http.StatusOK, recorder.Code)
+	assert.Equal(suite.T(), http.StatusCreated, recorder.Code)
 	assert.NotEmpty(suite.T(), response.Data)
 }
 
@@ -219,7 +310,7 @@ func (suite *UserControllerTestSuite) TestUpdateHandler_Success() {
 	var response response.SingleResponse
 	json.Unmarshal([]byte(recorder.Body.Bytes()), &response)
 
-	assert.Equal(suite.T(), http.StatusCreated, recorder.Code)
+	assert.Equal(suite.T(), http.StatusOK, recorder.Code)
 	assert.NotEmpty(suite.T(), response.Data)
 }
 
@@ -250,30 +341,30 @@ func (suite *UserControllerTestSuite) TestUpdateHandler_FailBinding() {
 }
 
 func (suite *UserControllerTestSuite) TestDeleteHandler_Success() {
-    suite.usecaseMock.On("Delete", UserProfile1.Id).Return(nil)
-    recorder := httptest.NewRecorder()
-    request, _ := http.NewRequest(http.MethodDelete, "/user/"+UserProfile1.Id, nil)
-    ctx, _ := gin.CreateTestContext(recorder)
-    ctx.Request = request
+	suite.usecaseMock.On("Delete", UserProfile1.Id).Return(nil)
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodDelete, "/user/"+UserProfile1.Id, nil)
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = request
 	ctx.AddParam("id", UserProfile1.Id)
 
-    suite.controller.deleteByIdHandler(ctx)
+	suite.controller.deleteByIdHandler(ctx)
 
-    assert.Equal(suite.T(), http.StatusCreated, recorder.Code)
+	assert.Equal(suite.T(), http.StatusOK, recorder.Code)
 }
 
 func (suite *UserControllerTestSuite) TestDeleteHandler_Fail() {
 	expectErr := errors.New("Failed")
-    suite.usecaseMock.On("Delete", UserProfile1.Id).Return(expectErr)
-    recorder := httptest.NewRecorder()
-    request, _ := http.NewRequest(http.MethodDelete, "/user/"+UserProfile1.Id, nil)
-    ctx, _ := gin.CreateTestContext(recorder)
-    ctx.Request = request
+	suite.usecaseMock.On("Delete", UserProfile1.Id).Return(expectErr)
+	recorder := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodDelete, "/user/"+UserProfile1.Id, nil)
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = request
 	ctx.AddParam("id", UserProfile1.Id)
-	
-    suite.controller.deleteByIdHandler(ctx)
 
-    assert.Equal(suite.T(), http.StatusBadRequest, recorder.Code)
+	suite.controller.deleteByIdHandler(ctx)
+
+	assert.Equal(suite.T(), http.StatusBadRequest, recorder.Code)
 }
 
 func (suite *UserControllerTestSuite) SetupTest() {
