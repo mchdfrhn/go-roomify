@@ -135,6 +135,10 @@ func (r *RepoMock) Update(newUser request.UserProfileRequest) (request.UserProfi
 }
 
 func (r *RepoMock) Delete(id string) error {
+	args := r.Called(id)
+	if args.Get(0) != nil {
+		return args.Error(0)
+	}
 	return nil
 }
 
@@ -229,7 +233,7 @@ func (suite *UserrUsecaseTestSuite) TestUserDelete_Error() {
 	expectErr := errors.New("Failed")
 	suite.repoMock.On("Delete", UserProfileRequest.Id).Return(expectErr)
 	err := suite.usecase.Delete(UserProfileRequest.Id)
-	assert.Nil(suite.T(), err)
+	assert.Error(suite.T(), err)
 }
 
 func (suite *UserrUsecaseTestSuite) SetupTest() {
