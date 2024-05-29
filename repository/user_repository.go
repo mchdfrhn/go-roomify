@@ -161,7 +161,7 @@ func (u *userProfileRepository) GetByUsername(username string) (model.UserProfil
 	qselect.Join("mst_division AS d", "up.division_id=d.id")
 	qselect.Join("users AS u", "up.user_id=u.id")
 	qselect.Join("mst_role AS r", "up.role_id=r.id")
-	qselect.Where("username", "=", username)
+	qselect.Where("u.username", "=", username)
 
 	err := qselect.RunRow().Scan(
 		&user.Id,
@@ -224,7 +224,7 @@ func (u *userProfileRepository) Update(user request.UserProfileRequest) (request
 	qupdate.Set("address", user.Address)
 	qupdate.Set("phone_number", user.PhoneNumber)
 	qupdate.Set("role_id", user.RoleId)
-
+	qupdate.Where("id", "=", user.Id)
 	_, err := qupdate.Run()
 	if err != nil {
 		return request.UserProfileRequest{}, err
