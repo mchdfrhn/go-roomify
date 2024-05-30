@@ -33,6 +33,7 @@ func (fc *FacilityController) FindAllPagingHandler(c *gin.Context) {
 			http.StatusBadRequest,
 			err.Error(),
 		)
+		return
 	}
 	var data []any
 	data = append(data, facilities)
@@ -62,23 +63,6 @@ func (fc *FacilityController) FindByIdHandler(c *gin.Context) {
 	)
 }
 
-func (fc *FacilityController) FindAllFacilityHandler(c *gin.Context) {
-	facilities, err := fc.uf.FindAllFacility()
-	if err != nil {
-		response.SendSingleResponseError(
-			c,
-			http.StatusBadRequest,
-			err.Error(),
-		)
-		return
-	}
-	response.SendSingleResponseCreated(
-		c,
-		facilities,
-		"Success Get All Facility",
-	)
-}
-
 func (fc *FacilityController) InsertHandler(c *gin.Context) {
 	var newFacility model.Facility
 	if err := c.ShouldBindJSON(&newFacility); err != nil {
@@ -87,6 +71,7 @@ func (fc *FacilityController) InsertHandler(c *gin.Context) {
 			http.StatusBadRequest,
 			err.Error(),
 		)
+		return
 	}
 
 	newFacility.Id = uuid.NewString()
@@ -97,6 +82,7 @@ func (fc *FacilityController) InsertHandler(c *gin.Context) {
 			http.StatusBadRequest,
 			err.Error(),
 		)
+		return
 	}
 
 	response.SendSingleResponseCreated(
@@ -125,7 +111,7 @@ func (fc *FacilityController) UpdateHandler(c *gin.Context) {
 		)
 		return
 	}
-	response.SendSingleResponseCreated(
+	response.SendSingleResponse(
 		c,
 		facilities,
 		"Success Facility Update",

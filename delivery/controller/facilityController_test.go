@@ -100,7 +100,7 @@ func (suite *FacilityControllerTestSuite) TestGetPagingHandler_Success() {
 	assert.Equal(suite.T(), http.StatusOK, recorder.Code)
 }
 
-func (suite *FacilityControllerTestSuite) TestGetListHandler_Fail() {
+func (suite *FacilityControllerTestSuite) TestFindAllPagingFacilitytHandler_Fail() {
 	expectErr := errors.New("Failed")
 	suite.usecaseMock.On("FindAllPagingFacility").Return([]model.Facility{}, dto.Paging{}, expectErr)
 	recorder := httptest.NewRecorder()
@@ -113,7 +113,7 @@ func (suite *FacilityControllerTestSuite) TestGetListHandler_Fail() {
 	assert.Equal(suite.T(), http.StatusBadRequest, recorder.Code)
 }
 
-func (suite *FacilityControllerTestSuite) TestGetFacilityByIdHandler_Success() {
+func (suite *FacilityControllerTestSuite) TestFindFacilityByIdHandler_Success() {
 	suite.usecaseMock.On("FindFacilityById", dummyFacility[0].Id).Return(dummyFacility[0], nil)
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest(http.MethodGet, "/facility/"+dummyFacility[0].Id, nil)
@@ -140,7 +140,7 @@ func (suite *FacilityControllerTestSuite) TestGetFacilityByIdHandler_Fail() {
 	assert.Equal(suite.T(), http.StatusBadRequest, recorder.Code)
 }
 
-func (suite *FacilityControllerTestSuite) TestInsertFacilityHandler_Success() {
+func (suite *FacilityControllerTestSuite) TestInputFacilityHandler_Success() {
 	my_rand := rand.New(rand.NewSource(42))
 	uuid.SetRand(my_rand)
 	dummyFacility[0].Id = uuid.NewString()
@@ -164,7 +164,7 @@ func (suite *FacilityControllerTestSuite) TestInsertFacilityHandler_Success() {
 	assert.NotEmpty(suite.T(), response.Data)
 }
 
-func (suite *FacilityControllerTestSuite) TestInsertFacilityHandler_FailUsecase() {
+func (suite *FacilityControllerTestSuite) TestInputFacilityHandler_FailUsecase() {
 	my_rand := rand.New(rand.NewSource(42))
 	uuid.SetRand(my_rand)
 	dummyFacility[0].Id = uuid.NewString()
@@ -185,7 +185,7 @@ func (suite *FacilityControllerTestSuite) TestInsertFacilityHandler_FailUsecase(
 	assert.Equal(suite.T(), http.StatusBadRequest, recorder.Code)
 }
 
-func (suite *FacilityControllerTestSuite) TestRegisterHandler_FailBinding() {
+func (suite *FacilityControllerTestSuite) TestInputHandler_FailBinding() {
 	recorder := httptest.NewRecorder()
 	reqBody, _ := json.Marshal(dummyFacility[0].Name)
 	request, _ := http.NewRequest(http.MethodPost, "/facility", bytes.NewBuffer(reqBody))
@@ -197,7 +197,7 @@ func (suite *FacilityControllerTestSuite) TestRegisterHandler_FailBinding() {
 	assert.Equal(suite.T(), http.StatusBadRequest, recorder.Code)
 }
 
-func (suite *FacilityControllerTestSuite) TestUpdateHandler_Success() {
+func (suite *FacilityControllerTestSuite) TestUpdatedHandler_Success() {
 	suite.usecaseMock.On("UpdatedFacility", dummyFacility[0]).Return(dummyFacility[0], nil)
 	recorder := httptest.NewRecorder()
 	reqBody, _ := json.Marshal(dummyFacility[0])
@@ -214,7 +214,7 @@ func (suite *FacilityControllerTestSuite) TestUpdateHandler_Success() {
 	assert.NotEmpty(suite.T(), response.Data)
 }
 
-func (suite *FacilityControllerTestSuite) TestUpdateHandler_FailUsecase() {
+func (suite *FacilityControllerTestSuite) TestUpdatedHandler_FailUsecase() {
 	suite.usecaseMock.On("UpdatedFacility", dummyFacility[0]).Return(nil, errors.New("Failed to update facility"))
 	recorder := httptest.NewRecorder()
 	reqBody, _ := json.Marshal(dummyFacility[0].Name)
@@ -228,7 +228,7 @@ func (suite *FacilityControllerTestSuite) TestUpdateHandler_FailUsecase() {
 
 }
 
-func (suite *FacilityControllerTestSuite) TestUpdateHandler_FailBinding() {
+func (suite *FacilityControllerTestSuite) TestUpdatedHandler_FailBinding() {
 	recorder := httptest.NewRecorder()
 	reqBody, _ := json.Marshal(dummyFacility[0].Name)
 	request, _ := http.NewRequest(http.MethodPut, "/facility", bytes.NewBuffer(reqBody))
@@ -240,7 +240,7 @@ func (suite *FacilityControllerTestSuite) TestUpdateHandler_FailBinding() {
 	assert.Equal(suite.T(), http.StatusBadRequest, recorder.Code)
 }
 
-func (suite *FacilityControllerTestSuite) TestDeleteHandler_Success() {
+func (suite *FacilityControllerTestSuite) TestDeletedHandler_Success() {
 	suite.usecaseMock.On("DeletedFacility", dummyFacility[0].Id).Return(nil)
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest(http.MethodDelete, "/facility/"+dummyFacility[0].Id, nil)
@@ -253,7 +253,7 @@ func (suite *FacilityControllerTestSuite) TestDeleteHandler_Success() {
 	assert.Equal(suite.T(), http.StatusOK, recorder.Code)
 }
 
-func (suite *FacilityControllerTestSuite) TestDeleteHandler_Fail() {
+func (suite *FacilityControllerTestSuite) TestDeletedHandler_Fail() {
 	expectErr := errors.New("Failed")
 	suite.usecaseMock.On("DeletedFacility", dummyFacility[0].Id).Return(expectErr)
 	recorder := httptest.NewRecorder()
