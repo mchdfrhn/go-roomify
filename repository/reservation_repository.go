@@ -3,6 +3,8 @@ package repository
 import (
 	"database/sql"
 	"go-roomify/model"
+	"go-roomify/model/dto/request"
+
 	//"go-roomify/model/dto"
 	//"go-roomify/model/dto/request"
 	//"go-roomify/utils"
@@ -13,7 +15,7 @@ import (
 
 type ReservationRepository interface {
 	CreateRequest(new_request model.Reservation) (model.Reservation, error)
-	CancelRequest(id string) (error)
+	ChangeStatus(reserv_status request.ReservationStatus) error
 }
 
 type reservationRepository struct {
@@ -24,7 +26,7 @@ func (self *reservationRepository) CreateRequest(new_request model.Reservation) 
 	//var r_reservation response.ReservationResponse
 
 	// [verif] Cek apakah ruangan sudah dipesan atau belum
-	// Sesuai dengan 
+	// Sesuai dengan
 	qselect := query.QSelect{DB: self.db}
 	qselect.Table("mst_room")
 	qselect.Column("COUNT(*)")
@@ -107,12 +109,48 @@ func (self *reservationRepository) CreateRequest(new_request model.Reservation) 
 	return new_request, nil
 }
 
-func (self *reservationRepository) CancelRequest(id string) (error) {
+func (self *reservationRepository) AcceptRoom(reserv_status request.ReservationStatus) error {
+	qselect := query.QSelect{DB: self.db}
+
+	qselect.Table("tx_reservation_detail")
+	qselect.Column("room_id")
+	qselect.Where("reservation_id", "=", reserv_status.Id)
+
+	rows, err := qselect.Run()
+
+	if err != nil {
+		return err
+	}
+
+	var room_ids []int
+
+	for rows.Next() {
+		var room_id int
+		if err := rows.Scan(&room_id); err != nil {
+			return err
+		}
+	}
+
+	rows.Close()
+
+	qupdate := query.QUpdate{DB: self.db}
+	qupdate.Table("mst_room")
+	qupdate.Set("is_availability", false)
+	qupdate.Where("", "", false)
+
+	for _, room_id := range room_ids {
+		qupdate.OrWhere("id", "=", room_id)
+	}
+
+	return nil
+}
+
+func (self *reservationRepository) ChangeStatus(reserv_status request.ReservationStatus) error {
 	qupdate := query.QUpdate{DB: self.db}
 
 	qupdate.Table("tx_reservation")
-	qupdate.Set("status", 2)
-	qupdate.Where("id", "=", id)
+	qupdate.Set("status", reserv_status.Status)
+	qupdate.Where("id", "=", reserv_status.Id)
 	qupdate.AndWhere("status", "=", 0)
 
 	result, err := qupdate.Run()
@@ -128,8 +166,8 @@ func (self *reservationRepository) CancelRequest(id string) (error) {
 	return err
 }
 
-func NewReservationRepository(db *sql.DB) (ReservationRepository) {
-	return &reservationRepository {
+func NewReservationRepository(db *sql.DB) ReservationRepository {
+	return &reservationRepository{
 		db: db,
 	}
 }

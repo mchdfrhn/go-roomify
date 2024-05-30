@@ -3,9 +3,10 @@ package middleware
 import (
 	// "go-roomify/config"
 	// "go-roomify/model"
-	"go-roomify/utils/common"
 	"go-roomify/model/dto/response"
+	"go-roomify/utils/common"
 	"net/http"
+
 	//"os"
 	"strings"
 	//"time"
@@ -52,7 +53,7 @@ func (self *authMiddleware) RequireToken(roles ...string) gin.HandlerFunc {
 		token_string := strings.Replace(auth_header.AuthorizationHeader, "Bearer ", "", -1)
 		if token_string == "" {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, response.Status{
-				Code: http.StatusUnauthorized,
+				Code:        http.StatusUnauthorized,
 				Description: "Unauthorized",
 			})
 			return
@@ -67,7 +68,7 @@ func (self *authMiddleware) RequireToken(roles ...string) gin.HandlerFunc {
 
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, response.Status{
-				Code: http.StatusUnauthorized,
+				Code:        http.StatusUnauthorized,
 				Description: err.Error(),
 			})
 			return
@@ -109,18 +110,19 @@ func (self *authMiddleware) RequireToken(roles ...string) gin.HandlerFunc {
 
 		if !valid_role {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, response.Status{
-				Code: http.StatusUnauthorized,
+				Code:        http.StatusUnauthorized,
 				Description: "You don't have permission",
 			})
 			return
 		}
 
+		ctx.Set("claims", jwt_claims)
 		ctx.Next()
 	}
 }
 
 func NewAuthMiddleware(jwtToken common.JwtToken) AuthMiddleware {
-	return &authMiddleware {
+	return &authMiddleware{
 		jwtToken: jwtToken,
 	}
 }

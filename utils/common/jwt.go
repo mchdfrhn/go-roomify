@@ -1,10 +1,10 @@
 package common
 
 import (
-	"time"
 	"errors"
 	"go-roomify/config"
 	"go-roomify/model"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 )
@@ -12,7 +12,7 @@ import (
 type JwtClaim struct {
 	jwt.StandardClaims
 	UserId string `json:"user_id"`
-	Role string `json:"role"`
+	Role   string `json:"role"`
 	//Email string `json:"email"`
 }
 
@@ -32,7 +32,7 @@ func (self *jwtToken) GenerateTokenJwt(user_cr model.UserCredentialJwt) (string,
 			ExpiresAt: time.Now().Add(self.config.JwtLifeTime).Unix(),
 		},
 		UserId: user_cr.Id,
-		Role: user_cr.Role,
+		Role:   user_cr.Role,
 		//Email: user_data.Email
 	}
 

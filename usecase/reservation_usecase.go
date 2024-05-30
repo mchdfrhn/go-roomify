@@ -3,6 +3,7 @@ package usecase
 import (
 	//"errors"
 	"go-roomify/model"
+	"go-roomify/model/dto/request"
 	"go-roomify/repository"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 
 type ReservationUsecase interface {
 	CreateRequest(new_request model.Reservation) (model.Reservation, error)
-	CancelRequest(id string) (error)
+	ChangeStatus(reserv_status request.ReservationStatus) error
 }
 
 type reservationUsecase struct {
@@ -23,7 +24,7 @@ type reservationUsecase struct {
 func (self *reservationUsecase) CreateRequest(new_request model.Reservation) (model.Reservation, error) {
 	new_request.Id = uuid.NewString()
 	new_request.Status = 0
-	new_request.Description = ""
+	//new_request.Description = ""
 
 	// Set Time Now fo Reservation DateTime
 	currentTime := time.Now()
@@ -38,12 +39,12 @@ func (self *reservationUsecase) CreateRequest(new_request model.Reservation) (mo
 	return self.repo.CreateRequest(new_request)
 }
 
-func (self *reservationUsecase) CancelRequest(id string) (error) {
-	return self.repo.CancelRequest(id)
+func (self *reservationUsecase) ChangeStatus(reserv_status request.ReservationStatus) error {
+	return self.repo.ChangeStatus(reserv_status)
 }
 
 func NewReservationUsecase(repo repository.ReservationRepository) ReservationUsecase {
-	return &reservationUsecase {
-		repo : repo,
+	return &reservationUsecase{
+		repo: repo,
 	}
 }
