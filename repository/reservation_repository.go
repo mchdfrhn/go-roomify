@@ -14,8 +14,7 @@ import (
 type ReservationRepository interface {
 	CreateRequest(new_request model.Reservation) (model.Reservation, error)
 	CancelRequest(id string) (error)
-	GetReservationByYear( selectedYear string) ( *sql.Rows, error )
-	GetReservationByYearBetween( selectedYear, selectedEnd string ) ( *sql.Rows, error )
+	GetReservationByYear( startYear string, endYear string ) ( *sql.Rows, error )
 }
 
 type reservationRepository struct {
@@ -130,68 +129,44 @@ func (self *reservationRepository) CancelRequest(id string) (error) {
 	return err
 }
 
-func (self *reservationRepository) GetReservationByYear( selectedYear string ) ( *sql.Rows, error ){
+func (self *reservationRepository) GetReservationByYear( startYear string, endYear string ) ( *sql.Rows, error ){
 	
 	query := query.QSelect{DB: self.db}
 	
+	// rows, err := query.Table(
+	// 	"tx_reservation AS tr",
+	// ).Column(
+	// 	"*",
+	// ).Join(
+	// 	"tx_reservation_detail AS trd",
+	// 	"trd.reservation_id = tr.id",
+	// ).Join(
+	// 	"room AS r",
+	// 	"r.id = trd.room_id",
+	// ).Join(
+	// 	"facility AS f",
+	// 	"f.room_id = r.id",
+	// ).Join(
+	// 	"", // tabel baru status, nggatau nama tabel nya
+	// 	"",
+	// ).Where(
+	// 	"reservation_date",
+	// 	"=",
+	// 	selectedYear,
+	// ).Run()
+
 	rows, err := query.Table(
-		"tx_reservation AS tr",
+		"t_tes",
 	).Column(
 		"*",
-	).Join(
-		"tx_reservation_detail AS trd",
-		"trd.reservation_id = tr.id",
-	).Join(
-		"room AS r",
-		"r.id = trd.room_id",
-	).Join(
-		"facility AS f",
-		"f.room_id = r.id",
-	).Join(
-		"", // tabel baru status
-		"",
 	).Where(
-		"reservation_date",
-		"=",
-		selectedYear,
-	).Run()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return rows, nil
-	
-}
-
-func (self *reservationRepository) GetReservationByYearBetween( selectedYear, selectedEnd string ) ( *sql.Rows, error ){
-
-	query := query.QSelect{DB: self.db}
-	
-	rows, err := query.Table(
-		"tx_reservation AS tr",
-	).Column(
-		"*",
-	).Join(
-		"tx_reservation_detail AS trd",
-		"trd.reservation_id = tr.id",
-	).Join(
-		"room AS r",
-		"r.id = trd.room_id",
-	).Join(
-		"facility AS f",
-		"f.room_id = r.id",
-	).Join(
-		"", // tabel baru status
-		"",
-	).Where(
-		"reservation_date",
-		">",
-		selectedYear,
+		"date",
+		">=",
+		startYear,
 	).AndWhere(
-		"reservation_date",
-		"<",
-		selectedEnd,
+		"date",
+		"<=",
+		endYear,
 	).Run()
 
 	if err != nil {

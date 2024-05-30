@@ -5,53 +5,41 @@ import (
 	"fmt"
 	"time"
 	"go-roomify/repository"
-	"go-roomify/utils"
 	"net/http"
 )
 
 type ReportUsecase interface{
-	DownloadReportByYear( startYear, endYear, startMonth, endMonth, startDay, endDay string ) ( *sql.Rows, int, error )
+	DownloadReportByYear( startYear string, endYear string ) ( *sql.Rows, int, error )
 }
 
 type reportUsecase struct{
 	reservationRepo repository.ReservationRepository
 }
 
-func ( ru *reportUsecase ) DownloadReportByYear( startYear, endYear, startMonth, endMonth, startDay, endDay string ) ( *sql.Rows, int, error ){
-
-	if startYear == "" && endYear != "" || 
-		startMonth == "" && endMonth != "" || 
-		startDay == "" && endMonth != "" {
-
-		return nil, http.StatusBadRequest, fmt.Errorf("cant set ending without start")
+func (ru *reportUsecase) DownloadReportByYear(startYear string, endYear string) (*sql.Rows, int, error) {
+	if startYear == "" || endYear == "" {
+		return nil, http.StatusBadRequest, fmt.Errorf("Query parameter 's' or 'e' must not be empty")
 	}
 
-	startYear, endYear = utils.ValidateYear( startYear, endYear )
-	startMonth, endMonth = utils.ValidateMonth( startMonth, endMonth )
-	startDay, endDay = utils.ValidateDay( startDay, endDay )
-
-	selectedStart := startYear + "-" + startMonth + "-" + startDay
-	selectedEnd := endYear + "-" + endMonth + "-" + endDay
-
-	var rows *sql.Rows
-
-	_, err := time.Parse("0000-00-00", selectedEnd)
+	_, err := time.Parse("2006-1-2", startYear)
 	if err != nil {
-		rows, err = ru.reservationRepo.GetReservationByYear( selectedStart )
-		if err != nil {
-			return nil, http.StatusInternalServerError, nil
-		}
-
-		return rows, http.StatusOK, nil
+		return nil, http.StatusBadRequest, fmt.Errorf("format query s must be YYYY-MM-DD")
 	}
 
-	rows, err = ru.reservationRepo.GetReservationByYearBetween( selectedStart, selectedEnd )
+	_, err = time.Parse("2006-1-2", endYear)
 	if err != nil {
-		return nil, http.StatusInternalServerError, nil
+		return nil, http.StatusBadRequest, fmt.Errorf("format query e be YYYY-MM-DD")
+	}
+
+	rows, err := ru.reservationRepo.GetReservationByYear( startYear, endYear )
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
 	}
 
 	return rows, http.StatusOK, nil
+
 }
+
 
 func NewReportUsecase( reservationRepo repository.ReservationRepository ) ReportUsecase{
 	return &reportUsecase{

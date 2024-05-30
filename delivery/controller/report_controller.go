@@ -19,22 +19,12 @@ func( rc *reportController ) downloadReportByYearHandler(ctx *gin.Context){
 	ctx.Header("Content-type", "text/csv")
 	ctx.Header("Content-Disposition", "attachment; filename=\"report.csv\"")
 
-	startYear := ctx.Query("sy")
-	endYear := ctx.Query("ey")
-
-	startMonth := ctx.Query("sm")
-	endMonth := ctx.Query("em")
-
-	startDay := ctx.Query("sd")
-	endDay := ctx.Query("ed")
+	startYear := ctx.Query("s")
+	endYear := ctx.Query("e")
 
 	rows, code, err := rc.ru.DownloadReportByYear( 
 		startYear, 
 		endYear,
-		startMonth,
-		endMonth,
-		startDay,
-		endDay, 
 	)
 	
 	if err != nil {
