@@ -69,54 +69,70 @@ func (rc *RoleController) findByIdHandler(ctx *gin.Context) {
 	id := ctx.Param("id")
 	role, err := rc.uc.FindRoleById(id)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
+		response.SendSingleResponseError(
+			ctx,
+			http.StatusBadRequest,
+			err.Error(),
+		)
 		return
 	}
-	ctx.JSON(http.StatusCreated, gin.H{
-		"message": "Success Get Role By Id",
-		"data":    role,
-	})
+	response.SendSingleResponse(
+		ctx,
+		role,
+		"Success Get Role By Id",
+	)
 }
 
 func (rc *RoleController) deleteByIdHandler(ctx *gin.Context) {
 	id := ctx.Param("id")
 	if id == "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"message": "Missing id parameter",
-		})
+		response.SendSingleResponseError(
+			ctx,
+			http.StatusBadRequest,
+			"Missing id parameter",
+		)
 		return
 	}
 	err := rc.uc.DeleteRoleById(id)
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": err.Error()})
+		response.SendSingleResponseError(
+			ctx,
+			http.StatusBadRequest,
+			err.Error(),
+		)
 		return
 	}
-	ctx.JSON(http.StatusCreated, gin.H{
-		"message": "Success Delete Role By Id",
-	})
+	response.SendSingleResponse(
+		ctx,
+		http.StatusOK,
+		"Success Delete Role By Id",
+	)
 }
 
 func (rc *RoleController) updateHandler(ctx *gin.Context) {
 	var role model.Role
 	if err := ctx.ShouldBindJSON(&role); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
+		response.SendSingleResponseError(
+			ctx,
+			http.StatusBadRequest,
+			err.Error(),
+		)
 		return
 	}
 	err := rc.uc.UpdateRole(role)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
+		response.SendSingleResponseError(
+			ctx,
+			http.StatusBadRequest,
+			err.Error(),
+		)
 		return
 	}
-	ctx.JSON(http.StatusCreated, gin.H{
-		"message": "Success Update Role By Id",
-		"data":    role,
-	})
+	response.SendSingleResponse(
+		ctx,
+		http.StatusOK,
+		"Success Update Role",
+	)
 }
 
 func (rc *RoleController) Route() {
