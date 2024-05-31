@@ -132,39 +132,50 @@ func (self *reservationRepository) CancelRequest(id string) (error) {
 func (self *reservationRepository) GetReservationByYear( startYear string, endYear string ) ( *sql.Rows, error ){
 	
 	query := query.QSelect{DB: self.db}
-	
-	// rows, err := query.Table(
-	// 	"tx_reservation AS tr",
-	// ).Column(
-	// 	"*",
-	// ).Join(
-	// 	"tx_reservation_detail AS trd",
-	// 	"trd.reservation_id = tr.id",
-	// ).Join(
-	// 	"room AS r",
-	// 	"r.id = trd.room_id",
-	// ).Join(
-	// 	"facility AS f",
-	// 	"f.room_id = r.id",
-	// ).Join(
-	// 	"", // tabel baru status, nggatau nama tabel nya
-	// 	"",
-	// ).Where(
-	// 	"reservation_date",
-	// 	"=",
-	// 	selectedYear,
-	// ).Run()
 
 	rows, err := query.Table(
-		"t_tes",
+		"tx_reservation AS tr",
 	).Column(
-		"*",
+		"up.full_name AS user_full_name",
+		"d.name AS user_division",
+		"up.address AS user_address",
+		"up.phone_number AS user_phone_number",
+		"role.position AS user_position",
+		"room.name AS room_name",
+		"room.roomtype",
+		"room.capacity",
+		"f.name AS facility_name",
+		"tr.reservation_date",
+		"tr.start_time",
+		"tr.end_time",
+		"trs.name AS status",
+	).Join(
+		"tx_reservation_detail AS trd",
+		"trd.reservation_id = tr.id",
+	).Join(
+		"mst_room AS room",
+		"trd.room_id = room.id",
+	).Join(
+		"mst_facility AS f",
+		"room.id = f.room_id",
+	).Join(
+		"tx_reservation_status AS trs",
+		"tr.reservation_status_id = trs.id",
+	).Join(
+		"mst_user_profile AS up",
+		"tr.user_profile_id = up.id",
+	).Join(
+		"mst_division AS d",
+		"up.division_id = d.id",
+	).Join(
+		"mst_role AS role",
+		"up.role_id = role.id",
 	).Where(
-		"date",
+		"tr.reservation_date",
 		">=",
 		startYear,
 	).AndWhere(
-		"date",
+		"tr.reservation_date",
 		"<=",
 		endYear,
 	).Run()

@@ -16,9 +16,6 @@ type reportController struct{
 
 func( rc *reportController ) downloadReportByYearHandler(ctx *gin.Context){
 
-	ctx.Header("Content-type", "text/csv")
-	ctx.Header("Content-Disposition", "attachment; filename=\"report.csv\"")
-
 	startYear := ctx.Query("s")
 	endYear := ctx.Query("e")
 
@@ -36,6 +33,9 @@ func( rc *reportController ) downloadReportByYearHandler(ctx *gin.Context){
 
 		return
 	}
+
+	ctx.Header("Content-type", "text/csv")
+	ctx.Header("Content-Disposition", "attachment; filename=\"report_start="+startYear+"_end="+endYear+".csv\"")
 
 	err = sqltocsv.Write(ctx.Writer, rows)
 	if err != nil {
