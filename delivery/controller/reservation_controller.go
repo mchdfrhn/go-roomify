@@ -12,6 +12,7 @@ import (
 
 	//"strconv"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,6 +30,10 @@ func (self *ReservationController) createNewHandler(ctx *gin.Context) {
 		return
 	}
 
+	jwt_claims := ctx.MustGet("claims").(jwt.MapClaims)
+
+	new_reservation.UserProfileId = jwt_claims["user_id"].(string)
+
 	r_reservation, err := self.uc.CreateRequest(new_reservation)
 
 	if err != nil {
@@ -39,44 +44,74 @@ func (self *ReservationController) createNewHandler(ctx *gin.Context) {
 	response.SendSingleResponseCreated(ctx, r_reservation, fmt.Sprintf("Success Create New Reservation Request"))
 }
 
-func (self *ReservationController) changeStatus(ctx *gin.Context, reserv_status int, success_message string) {
-	var new_reservation_status request.ReservationStatus
+func (self *ReservationController) statusHandler(ctx *gin.Context) {
+	var new_reserv_status request.ReservationStatusRequest
 
-	if err := ctx.ShouldBindJSON(&new_reservation_status); err != nil {
+	if err := ctx.ShouldBindJSON(&new_reserv_status); err != nil {
 		response.SendSingleResponseError(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	new_reservation_status.Status = reserv_status
-	err := self.uc.ChangeStatus(new_reservation_status)
+	jwt_claims := ctx.MustGet("claims").(jwt.MapClaims)
+
+	//user_id := jwt_claims["user_id"]
+	user_role := jwt_claims["role"]
+
+	if user_role == "employee" && new_reserv_status.StatusId != utils.RESERV_STATUS_CANCEL {
+		response.SendSingleResponseError(ctx, http.StatusBadRequest, "Invalid Status Code")
+		return
+	}
+
+	if user_role != "employee" && new_reserv_status.StatusId == utils.RESERV_STATUS_CANCEL {
+		response.SendSingleResponseError(ctx, http.StatusBadRequest, "Invalid Status Code")
+		return
+	}
+
+	err := self.uc.ChangeStatus(new_reserv_status)
 
 	if err != nil {
 		response.SendSingleResponseError(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	response.SendSingleResponse(ctx, nil, success_message)
+	response.SendSingleResponse(ctx, nil, "Success Change Reservation Status")
 }
 
-func (self *ReservationController) cancelHandler(ctx *gin.Context) {
-	self.changeStatus(ctx, utils.RESERV_STATUS_CANCEL, "Success Cancel Room Reservation Request")
-}
+func (self *ReservationController) getListByTokenHandler(ctx *gin.Context) {
+	jwt_claims := ctx.MustGet("claims").(jwt.MapClaims)
 
-func (self *ReservationController) acceptHandler(ctx *gin.Context) {
-	self.changeStatus(ctx, utils.RESERV_STATUS_ACCEPTED, "Success Accept Room Reservation Request")
-}
+	fl_reserv_get_list := request.ReservationGetListFilter{
+		UserId:       jwt_claims["user_id"].(string),
+		UserRole:     jwt_claims["role"].(string),
+		FilterStatus: ctx.DefaultQuery("fl_status", ""),
+	}
 
-func (self *ReservationController) declineHandler(ctx *gin.Context) {
-	self.changeStatus(ctx, utils.RESERV_STATUS_DECLINE, "Success Decline Room Reservation Request")
+	fmt.Println(fl_reserv_get_list)
+
+	r_reservation, err := self.uc.GetListByToken(fl_reserv_get_list)
+
+	if err != nil {
+		response.SendSingleResponseError(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var data []any
+	data = append(data, r_reservation)
+
+	response.SendSingleResponse(ctx, data, "Success Get List Reservation")
 }
 
 func (self *ReservationController) Route() {
 	router := self.rg.Group("/reservation")
-	// router.Use(self.authMiddleware.RequireToken("admin", "employee", "ga"))
-	router.POST("", self.createNewHandler, self.authMiddleware.RequireToken("admin", "employee", "ga"))
-	router.PUT("/cancel", self.cancelHandler, self.authMiddleware.RequireToken("employee"))
-	router.PUT("/accept", self.acceptHandler, self.authMiddleware.RequireToken("admin", "ga"))
-	router.PUT("/decline", self.declineHandler, self.authMiddleware.RequireToken("admin", "ga"))
+	router.Use(self.authMiddleware.RequireToken("admin", "employee", "ga"))
+	// router.POST("/register", self.createNewHandler, self.authMiddleware.RequireToken("admin"))
+	// router.POST("/delete", self.createNewHandler, self.authMiddleware.RequireToken("admin"))
+
+	router.POST("", self.createNewHandler)
+	router.GET("", self.getListByTokenHandler)
+	router.PUT("/status", self.statusHandler)
+	// router.PUT("/accept", self.acceptHandler, self.authMiddleware.RequireToken("admin", "ga"))
+	// router.PUT("/decline", self.declineHandler, self.authMiddleware.RequireToken("admin", "ga"))
 }
 
 func NewReservationController(uc usecase.ReservationUsecase, router *gin.Engine, auth_middleware middleware.AuthMiddleware) *ReservationController {

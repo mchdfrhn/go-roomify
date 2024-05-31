@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"go-roomify/model"
 	"go-roomify/model/dto/request"
+	"go-roomify/model/dto/response"
+	"go-roomify/utils"
 
 	//"go-roomify/model/dto"
 	//"go-roomify/model/dto/request"
@@ -15,7 +17,8 @@ import (
 
 type ReservationRepository interface {
 	CreateRequest(new_request model.Reservation) (model.Reservation, error)
-	ChangeStatus(reserv_status request.ReservationStatus) error
+	ChangeStatus(reserv_status request.ReservationStatusRequest) error
+	GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, error)
 }
 
 type reservationRepository struct {
@@ -30,21 +33,17 @@ func (self *reservationRepository) CreateRequest(new_request model.Reservation) 
 	qselect := query.QSelect{DB: self.db}
 	qselect.Table("mst_room")
 	qselect.Column("COUNT(*)")
-	qselect.Where("", "", false)
+	qselect.Where("id", "=", new_request.Detail.RoomId)
+	qselect.AndWhere("is_available", "=", false)
 
-	for _, req_detail := range new_request.Detail {
-		qselect.OrWhere("id", "=", req_detail.RoomId)
-		qselect.AndWhere("is_available", "=", false)
-	}
-
-	var total_booked_room int
-	err := qselect.RunRow().Scan(&total_booked_room)
+	var is_room_booked int
+	err := qselect.RunRow().Scan(&is_room_booked)
 
 	if err != nil {
 		return model.Reservation{}, err
 	}
 
-	if total_booked_room > 0 {
+	if is_room_booked > 0 {
 		return model.Reservation{}, errors.New("Invalid Room")
 	}
 
@@ -79,79 +78,53 @@ func (self *reservationRepository) CreateRequest(new_request model.Reservation) 
 		return model.Reservation{}, errors.New("Failed to make a request, no rows affected")
 	}
 
-	for _, req_detail := range new_request.Detail {
-		// Insert Reservation Detail
-		qinsert := query.QInsert{DB: self.db}
+	// Insert Reservation Detail
+	qinsert = query.QInsert{DB: self.db}
+	req_detail := new_request.Detail
 
-		qinsert.Table("tx_reservation_detail")
-		qinsert.Column(
-			"id",
-			"reservation_id",
-			"room_id",
-			"equipment_needed")
-		qinsert.Values(
-			req_detail.Id,
-			new_request.Id,
-			req_detail.RoomId,
-			req_detail.Equipment)
+	qinsert.Table("tx_reservation_detail")
+	qinsert.Column(
+		"id",
+		"reservation_id",
+		"room_id",
+		"equipment_needed")
+	qinsert.Values(
+		req_detail.Id,
+		new_request.Id,
+		req_detail.RoomId,
+		req_detail.Equipment)
 
-		result, err := qinsert.Run()
+	result, err = qinsert.Run()
 
-		if err != nil {
-			return model.Reservation{}, err
-		}
+	if err != nil {
+		return model.Reservation{}, err
+	}
 
-		if a, _ := result.RowsAffected(); a == 0 {
-			return model.Reservation{}, errors.New("Failed to make a request, no rows affected")
-		}
+	if a, _ := result.RowsAffected(); a == 0 {
+		return model.Reservation{}, errors.New("Failed to make a request, no rows affected")
 	}
 
 	return new_request, nil
 }
 
-func (self *reservationRepository) AcceptRoom(reserv_status request.ReservationStatus) error {
+func (self *reservationRepository) ChangeStatus(reserv_status request.ReservationStatusRequest) error {
+	// SET ROOM TO UNAVAILABLE
 	qselect := query.QSelect{DB: self.db}
+	qselect.Table("tx_reservation AS rv")
+	qselect.Column("rvd.room_id")
+	qselect.Join("tx_reservation_detail as rvd", "rvd.reservation_id = rv.id")
+	qselect.Where("rv.id", "=", reserv_status.ReservationId)
 
-	qselect.Table("tx_reservation_detail")
-	qselect.Column("room_id")
-	qselect.Where("reservation_id", "=", reserv_status.Id)
+	var room_id string
 
-	rows, err := qselect.Run()
-
-	if err != nil {
+	if err := qselect.RunRow().Scan(&room_id); err != nil {
 		return err
 	}
 
-	var room_ids []int
-
-	for rows.Next() {
-		var room_id int
-		if err := rows.Scan(&room_id); err != nil {
-			return err
-		}
-	}
-
-	rows.Close()
-
 	qupdate := query.QUpdate{DB: self.db}
 	qupdate.Table("mst_room")
-	qupdate.Set("is_availability", false)
-	qupdate.Where("", "", false)
-
-	for _, room_id := range room_ids {
-		qupdate.OrWhere("id", "=", room_id)
-	}
-
-	return nil
-}
-
-func (self *reservationRepository) ChangeStatus(reserv_status request.ReservationStatus) error {
-	qupdate := query.QUpdate{DB: self.db}
-
-	qupdate.Table("tx_reservation")
-	qupdate.Set("status", reserv_status.Status)
-	qupdate.Where("id", "=", reserv_status.Id)
-	qupdate.AndWhere("status", "=", 0)
+	qupdate.Set("is_available", false)
+	qupdate.Where("id", "=", room_id)
 
 	result, err := qupdate.Run()
 
@@ -160,10 +133,113 @@ func (self *reservationRepository) ChangeStatus(reserv_status request.Reservatio
 	}
 
 	if a, _ := result.RowsAffected(); a == 0 {
-		return errors.New("Invalid Id")
+		return errors.New("Invalid Room Id")
+	}
+
+	// Set Transaction Status
+	qupdate = query.QUpdate{DB: self.db}
+
+	qupdate.Table("tx_reservation")
+	qupdate.Set("reservation_status_id", reserv_status.StatusId)
+	qupdate.Set("description", reserv_status.Description)
+	qupdate.Where("id", "=", reserv_status.ReservationId)
+	qupdate.AndWhere("reservation_status_id", "=", utils.RESERV_STATUS_PENDING)
+
+	result, err = qupdate.Run()
+
+	if err != nil {
+		return err
+	}
+
+	if a, _ := result.RowsAffected(); a == 0 {
+		return errors.New("Invalid Reservation Id")
 	}
 
 	return err
+}
+
+func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, error) {
+	qselect := query.QSelect{DB: self.db}
+
+	qselect.Table("tx_reservation AS rv")
+	qselect.Column(
+		"rv.id",
+		"rv.user_profile_id",
+		"rv.reservation_date",
+		"rv.start_time",
+		"rv.end_time",
+		"rv.description",
+
+		"rvs.id AS status_id",
+		"rvs.name AS status_name",
+
+		"rvd.id",
+		"rvd.reservation_id",
+		"rvd.equipment_needed",
+
+		"room.id",
+		"room.name",
+		"room.roomtype",
+		"room.capacity",
+		"room.is_available")
+	qselect.Join("tx_reservation_status AS rvs", "rv.reservation_status_id = rvs.id")
+	qselect.Join("tx_reservation_detail AS rvd", "rv.id = rvd.reservation_id")
+	qselect.Join("mst_room AS room", "rvd.room_id = room.id")
+
+	filter_status := fl_reserv_get_list.FilterStatus
+	user_id := fl_reserv_get_list.UserId
+	user_role := fl_reserv_get_list.UserRole
+
+	if filter_status != "" {
+		qselect.Where("rvs.id", "=", filter_status)
+	}
+	if user_role == "employee" {
+		if filter_status != "" {
+			qselect.AndWhere("rv.user_profile_id", "=", user_id)
+		} else {
+			qselect.Where("rv.user_profile_id", "=", user_id)
+		}
+	}
+
+	rows, err := qselect.Run()
+
+	if err != nil {
+		return nil, err
+	}
+
+	var rows_reserv_response []response.ReservationResponse
+
+	for rows.Next() {
+		var r_reserv_resp response.ReservationResponse
+
+		err := rows.Scan(
+			&r_reserv_resp.Id,
+			&r_reserv_resp.UserProfileId,
+			&r_reserv_resp.ReservationDate,
+			&r_reserv_resp.StartDate,
+			&r_reserv_resp.EndDate,
+			&r_reserv_resp.Description,
+			&r_reserv_resp.Status.Id,
+			&r_reserv_resp.Status.Name,
+			&r_reserv_resp.Detail.Id,
+			&r_reserv_resp.Detail.ReservationId,
+			&r_reserv_resp.Detail.Equipment,
+			&r_reserv_resp.Detail.Room.Id,
+			&r_reserv_resp.Detail.Room.Name,
+			&r_reserv_resp.Detail.Room.RoomType,
+			&r_reserv_resp.Detail.Room.Capacity,
+			&r_reserv_resp.Detail.Room.IsAvailable)
+
+		if err != nil {
+			return nil, err
+		}
+
+		rows_reserv_response = append(rows_reserv_response, r_reserv_resp)
+	}
+
+	rows.Close()
+
+	return rows_reserv_response, nil
 }
 
 func NewReservationRepository(db *sql.DB) ReservationRepository {
