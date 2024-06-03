@@ -1,0 +1,8 @@
+package utils
+
+const (
+	RESERV_STATUS_PENDING  = "1"
+	RESERV_STATUS_CANCEL   = "2"
+	RESERV_STATUS_ACCEPTED = "3"
+	RESERV_STATUS_DECLINE  = "4"
+)
