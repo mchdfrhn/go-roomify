@@ -8,5 +8,5 @@ type RoomRequest struct {
 
 type RoomStatusRequest struct {
 	Id          string `json:"id" binding:"required"`
-	IsAvailable bool   `json:"is_available" binding:"required"`
+	IsAvailable *bool  `json:"is_available" binding:"required"`
 }
