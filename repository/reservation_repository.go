@@ -14,6 +14,7 @@ import (
 type ReservationRepository interface {
 	CreateRequest(new_request model.Reservation) (model.Reservation, error)
 	CancelRequest(id string) (error)
+	GetReservationByYear( startYear string, endYear string ) ( *sql.Rows, error )
 }
 
 type reservationRepository struct {
@@ -126,6 +127,54 @@ func (self *reservationRepository) CancelRequest(id string) (error) {
 	}
 
 	return err
+}
+
+func (self *reservationRepository) GetReservationByYear( startYear string, endYear string ) ( *sql.Rows, error ){
+	
+	query := query.QSelect{DB: self.db}
+	
+	// rows, err := query.Table(
+	// 	"tx_reservation AS tr",
+	// ).Column(
+	// 	"*",
+	// ).Join(
+	// 	"tx_reservation_detail AS trd",
+	// 	"trd.reservation_id = tr.id",
+	// ).Join(
+	// 	"room AS r",
+	// 	"r.id = trd.room_id",
+	// ).Join(
+	// 	"facility AS f",
+	// 	"f.room_id = r.id",
+	// ).Join(
+	// 	"", // tabel baru status, nggatau nama tabel nya
+	// 	"",
+	// ).Where(
+	// 	"reservation_date",
+	// 	"=",
+	// 	selectedYear,
+	// ).Run()
+
+	rows, err := query.Table(
+		"t_tes",
+	).Column(
+		"*",
+	).Where(
+		"date",
+		">=",
+		startYear,
+	).AndWhere(
+		"date",
+		"<=",
+		endYear,
+	).Run()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return rows, nil
+	
 }
 
 func NewReservationRepository(db *sql.DB) (ReservationRepository) {
