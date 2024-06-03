@@ -19,6 +19,7 @@ type ReservationRepository interface {
 	CreateRequest(new_request model.Reservation) (model.Reservation, error)
 	ChangeStatus(reserv_status request.ReservationStatusRequest) error
 	GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, error)
+	GetReservationByYear(startYear string, endYear string) (*sql.Rows, error)
 }
 
 type reservationRepository struct {
