@@ -155,7 +155,7 @@ func (rc *roomController) deleteRoomByIdHandler(ctx *gin.Context) {
 }
 
 func (rc *roomController) updateRoomByIdIsAvailableHandler(ctx *gin.Context) {
-	var updateRoom model.RoomStatus
+	var updateRoom request.RoomStatusRequest
 
 	if err := ctx.ShouldBindJSON(&updateRoom); err != nil {
 		response.SendSingleResponseError(
