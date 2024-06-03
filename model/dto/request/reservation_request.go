@@ -7,7 +7,10 @@ type ReservationStatusRequest struct {
 }
 
 type ReservationGetListFilter struct {
-	UserId       string
-	UserRole     string
-	FilterStatus string
+	UserId          string
+	UserRole        string
+	ReservationId   string
+	FilterStatus    string
+	FilterStartDate string
+	FilterEndDate   string
 }

@@ -81,9 +81,11 @@ func (self *ReservationController) getListByTokenHandler(ctx *gin.Context) {
 	jwt_claims := ctx.MustGet("claims").(jwt.MapClaims)
 
 	fl_reserv_get_list := request.ReservationGetListFilter{
-		UserId:       jwt_claims["user_id"].(string),
-		UserRole:     jwt_claims["role"].(string),
-		FilterStatus: ctx.DefaultQuery("fl_status", ""),
+		UserId:          jwt_claims["user_id"].(string),
+		UserRole:        jwt_claims["role"].(string),
+		FilterStatus:    ctx.DefaultQuery("fl_status", ""),
+		FilterStartDate: ctx.DefaultQuery("fl_start_date", ""),
+		FilterEndDate:   ctx.DefaultQuery("fl_end_date", ""),
 	}
 
 	r_reservation, err := self.uc.GetListByToken(fl_reserv_get_list)
@@ -93,10 +95,32 @@ func (self *ReservationController) getListByTokenHandler(ctx *gin.Context) {
 		return
 	}
 
-	var data []any
-	data = append(data, r_reservation)
+	// var data []any
+	// data = append(data, r_reservation)
 
-	response.SendSingleResponse(ctx, data, "Success Get List Reservation")
+	response.SendSingleResponse(ctx, r_reservation, "Success Get List Reservation")
+}
+
+func (self *ReservationController) getByIdByTokenHandler(ctx *gin.Context) {
+	jwt_claims := ctx.MustGet("claims").(jwt.MapClaims)
+
+	fl_reserv_get_list := request.ReservationGetListFilter{
+		UserId:        jwt_claims["user_id"].(string),
+		UserRole:      jwt_claims["role"].(string),
+		ReservationId: ctx.Param("id"),
+	}
+
+	r_reservation, err := self.uc.GetListByToken(fl_reserv_get_list)
+
+	if err != nil {
+		response.SendSingleResponseError(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	//var data []any
+	//data = append(data, r_reservation)
+
+	response.SendSingleResponse(ctx, r_reservation, "Success Get List Reservation")
 }
 
 func (self *ReservationController) Route() {
@@ -110,6 +134,7 @@ func (self *ReservationController) Route() {
 
 	router.POST("", self.createNewHandler)
 	router.GET("", self.getListByTokenHandler)
+	router.GET("/:id", self.getByIdByTokenHandler)
 	router.PUT("/status", self.statusHandler)
 	// router.PUT("/accept", self.acceptHandler, self.authMiddleware.RequireToken("admin", "ga"))
 	// router.PUT("/decline", self.declineHandler, self.authMiddleware.RequireToken("admin", "ga"))

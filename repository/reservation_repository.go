@@ -188,17 +188,29 @@ func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.Res
 	qselect.Join("mst_room AS room", "rvd.room_id = room.id")
 
 	filter_status := fl_reserv_get_list.FilterStatus
+	filter_start_date := fl_reserv_get_list.FilterStartDate
+	filter_end_date := fl_reserv_get_list.FilterEndDate
+	resrv_id := fl_reserv_get_list.ReservationId
 	user_id := fl_reserv_get_list.UserId
 	user_role := fl_reserv_get_list.UserRole
 
-	if filter_status != "" {
-		qselect.Where("rvs.id", "=", filter_status)
-	}
+	qselect.Where("", "", true)
+
 	if user_role == "employee" {
+		qselect.AndWhere("rv.user_profile_id", "=", user_id)
+	}
+
+	if resrv_id != "" {
+		qselect.AndWhere("rv.id", "=", resrv_id)
+	} else {
 		if filter_status != "" {
-			qselect.AndWhere("rv.user_profile_id", "=", user_id)
-		} else {
-			qselect.Where("rv.user_profile_id", "=", user_id)
+			qselect.AndWhere("rvs.id", "=", filter_status)
+		}
+		if filter_start_date != "" {
+			qselect.AndWhere("rv.reservation_date", ">=", filter_start_date)
+		}
+		if filter_end_date != "" {
+			qselect.AndWhere("rv.reservation_date", "<=", filter_end_date)
 		}
 	}
 
@@ -252,17 +264,26 @@ func (self *reservationRepository) GetReservationByYear(startYear string, endYea
 	).Column(
 		"*",
 	).Join(
+		"mst_user_profile AS up",
+		"up.id = tr.user_profile_id",
+	).Join(
+		"mst_division AS div",
+		"div.id = up.division_id",
+	).Join(
+		"mst_role AS role",
+		"role.id = up.role_id",
+	).Join(
 		"tx_reservation_detail AS trd",
 		"trd.reservation_id = tr.id",
 	).Join(
-		"room AS r",
+		"mst_room AS r",
 		"r.id = trd.room_id",
+	).Join(
+		"mst_facility AS f",
+		"f.room_id = r.id",
 	).Join(
 		"tx_reservation_status AS trs",
 		"trs.id = tr.reservation_status_id",
-	).Join(
-		"facility AS f",
-		"f.room_id = r.id",
 	).Where(
 		"reservation_date",
 		">=",
