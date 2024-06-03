@@ -27,6 +27,7 @@ type Server struct {
 	userCredentialUc usecase.UserCredentialUsecase
 
 	reservationUc usecase.ReservationUsecase
+	reportUc      usecase.ReportUsecase
 
 	engine *gin.Engine
 	host   string
@@ -36,15 +37,16 @@ func (self *Server) setupControllers() {
 	// controller.NewCustomerController(s.customerUc, s.engine, s.authMiddleware).Route()
 	// controller.NewServiceController(s.serviceUc, s.engine).Route()
 	// controller.NewTransactionController(s.transactionUc, s.engine).Route()
-	controller.NewRoomController(self.roomUc, self.engine).Route()
-	controller.NewFacilityController(self.facilityUc, self.engine).Route()
+	controller.NewRoomController(self.roomUc, self.engine, self.authMiddleware).Route()
+	controller.NewFacilityController(self.facilityUc, self.engine, self.authMiddleware).Route()
 
-	controller.NewUserController(self.userUc, self.engine).Route()
-	controller.NewRoleController(self.roleUc, self.engine).Route()
-	controller.NewDivisionController(self.divisionUc, self.engine).Route()
-	controller.NewUserCredentialController(self.userCredentialUc, self.engine).Route()
+	controller.NewUserController(self.userUc, self.engine, self.authMiddleware).Route()
+	controller.NewRoleController(self.roleUc, self.engine, self.authMiddleware).Route()
+	controller.NewDivisionController(self.divisionUc, self.engine, self.authMiddleware).Route()
+	controller.NewUserCredentialController(self.userCredentialUc, self.engine, self.authMiddleware).Route()
 
 	controller.NewReservationController(self.reservationUc, self.engine, self.authMiddleware).Route()
+	controller.NewReportController(self.reportUc, self.engine, self.authMiddleware).Route()
 }
 
 func (s *Server) Run() {
@@ -102,6 +104,10 @@ func NewServer() *Server {
 	resevationRepo := repository.NewReservationRepository(db.Conn())
 	resevationUc := usecase.NewReservationUsecase(resevationRepo)
 
+	// Report
+	//reportRepo := repository.NewReportRepository(db.Conn())
+	reportUc := usecase.NewReportUsecase(resevationRepo)
+
 	// Gin Engine
 	engine := gin.Default()
 
@@ -119,7 +125,9 @@ func NewServer() *Server {
 		userCredentialUc: user_credential_uc,
 
 		reservationUc: resevationUc,
-		engine:        engine,
-		host:          ":8085",
+		reportUc:      reportUc,
+
+		engine: engine,
+		host:   ":8085",
 	}
 }
