@@ -1,7 +1,12 @@
 package request
 
-type RoomRequest struct{
-	Name string `json:"name" binding:"required"`
+type RoomRequest struct {
+	Name     string `json:"name" binding:"required"`
 	RoomType string `json:"roomtype" binding:"required"`
-	Capacity int `json:"capacity" binding:"required"`
+	Capacity int    `json:"capacity" binding:"required"`
+}
+
+type RoomStatusRequest struct {
+	Id          string `json:"id" binding:"required"`
+	IsAvailable bool   `json:"is_available" binding:"required"`
 }
