@@ -58,7 +58,7 @@ func (self *reservationRepository) CreateRequest(new_request model.Reservation) 
 		"reservation_date",
 		"start_time",
 		"end_time",
-		"status",
+		"reservation_status_id",
 		"description")
 	qinsert.Values(
 		new_request.Id,
@@ -66,7 +66,7 @@ func (self *reservationRepository) CreateRequest(new_request model.Reservation) 
 		new_request.ReservationDate,
 		new_request.StartDate,
 		new_request.EndDate,
-		new_request.Status,
+		new_request.Status.Id,
 		new_request.Description)
 
 	result, err := qinsert.Run()
@@ -247,41 +247,45 @@ func (self *reservationRepository) GetReservationByYear(startYear string, endYea
 
 	query := query.QSelect{DB: self.db}
 
-	// rows, err := query.Table(
-	// 	"tx_reservation AS tr",
-	// ).Column(
-	// 	"*",
-	// ).Join(
-	// 	"tx_reservation_detail AS trd",
-	// 	"trd.reservation_id = tr.id",
-	// ).Join(
-	// 	"room AS r",
-	// 	"r.id = trd.room_id",
-	// ).Join(
-	// 	"facility AS f",
-	// 	"f.room_id = r.id",
-	// ).Join(
-	// 	"", // tabel baru status, nggatau nama tabel nya
-	// 	"",
-	// ).Where(
-	// 	"reservation_date",
-	// 	"=",
-	// 	selectedYear,
-	// ).Run()
-
 	rows, err := query.Table(
-		"t_tes",
+		"tx_reservation AS tr",
 	).Column(
 		"*",
+	).Join(
+		"tx_reservation_detail AS trd",
+		"trd.reservation_id = tr.id",
+	).Join(
+		"room AS r",
+		"r.id = trd.room_id",
+	).Join(
+		"tx_reservation_status AS trs",
+		"trs.id = tr.reservation_status_id",
+	).Join(
+		"facility AS f",
+		"f.room_id = r.id",
 	).Where(
-		"date",
+		"reservation_date",
 		">=",
 		startYear,
 	).AndWhere(
-		"date",
+		"reservation_date",
 		"<=",
 		endYear,
 	).Run()
+
+	// rows, err := query.Table(
+	// 	"t_tes",
+	// ).Column(
+	// 	"*",
+	// ).Where(
+	// 	"date",
+	// 	">=",
+	// 	startYear,
+	// ).AndWhere(
+	// 	"date",
+	// 	"<=",
+	// 	endYear,
+	// ).Run()
 
 	if err != nil {
 		return nil, err
