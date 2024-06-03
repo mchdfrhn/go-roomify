@@ -99,8 +99,8 @@ func (rc *roomController) getRoomByIdOrNameHandler(ctx *gin.Context) {
 }
 
 func (rc *roomController) updateRoomByIdHandler(ctx *gin.Context) {
-
 	var updateRoom model.Room
+
 	if err := ctx.ShouldBindJSON(&updateRoom); err != nil {
 		response.SendSingleResponseError(
 			ctx,
@@ -167,7 +167,7 @@ func (rc *roomController) updateRoomByIdIsAvailableHandler(ctx *gin.Context) {
 		return
 	}
 
-	updatedRoom, code, err := rc.ru.UpdateRoomByIdIsAvailableOnly(updateRoom.Id, updateRoom.IsAvailable)
+	updatedRoom, code, err := rc.ru.UpdateRoomByIdIsAvailableOnly(updateRoom.Id, *updateRoom.IsAvailable)
 
 	if err != nil {
 		response.SendSingleResponseError(
@@ -191,8 +191,18 @@ func (rc *roomController) Route() {
 	//group.Use()
 
 	group.POST("/", rc.authMiddleware.RequireToken(utils.USER_ROLE_ADMIN), rc.createRoomHandler)
-	group.GET("/", rc.getAllroomHandler)
-	group.GET("/:idOrName", rc.getRoomByIdOrNameHandler)
+	group.GET("/",
+		rc.authMiddleware.RequireToken(
+			utils.USER_ROLE_ADMIN,
+			utils.USER_ROLE_GA,
+			utils.USER_ROLE_EMPLOYEE),
+		rc.getAllroomHandler)
+	group.GET("/:idOrName",
+		rc.authMiddleware.RequireToken(
+			utils.USER_ROLE_ADMIN,
+			utils.USER_ROLE_GA,
+			utils.USER_ROLE_EMPLOYEE),
+		rc.getRoomByIdOrNameHandler)
 	group.PUT("/", rc.authMiddleware.RequireToken(utils.USER_ROLE_ADMIN), rc.updateRoomByIdHandler)
 	group.PUT("/status", rc.authMiddleware.RequireToken(
 		utils.USER_ROLE_ADMIN, utils.USER_ROLE_GA), rc.updateRoomByIdIsAvailableHandler)
