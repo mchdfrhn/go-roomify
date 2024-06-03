@@ -1,18 +1,21 @@
 package controller
 
 import (
+	"go-roomify/middleware"
 	"go-roomify/model"
 	"go-roomify/model/dto/request"
 	"go-roomify/model/dto/response"
 	"go-roomify/usecase"
+	"go-roomify/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 type roomController struct {
-	ru usecase.RoomUsecase
-	rg *gin.RouterGroup
+	ru             usecase.RoomUsecase
+	rg             *gin.RouterGroup
+	authMiddleware middleware.AuthMiddleware
 }
 
 func (rc *roomController) createRoomHandler(ctx *gin.Context) {
@@ -109,6 +112,7 @@ func (rc *roomController) updateRoomByIdHandler(ctx *gin.Context) {
 	}
 
 	updatedRoom, code, err := rc.ru.UpdateRoomById(updateRoom)
+
 	if err != nil {
 		response.SendSingleResponseError(
 			ctx,
@@ -150,18 +154,56 @@ func (rc *roomController) deleteRoomByIdHandler(ctx *gin.Context) {
 
 }
 
-func (rc *roomController) Route() {
-	group := rc.rg.Group("/room")
-	group.POST("/", rc.createRoomHandler)
-	group.GET("/", rc.getAllroomHandler)
-	group.GET("/:idOrName", rc.getRoomByIdOrNameHandler)
-	group.PUT("/", rc.updateRoomByIdHandler)
-	group.DELETE("/:id", rc.deleteRoomByIdHandler)
+func (rc *roomController) updateRoomByIdIsAvailableHandler(ctx *gin.Context) {
+	var updateRoom model.RoomStatus
+
+	if err := ctx.ShouldBindJSON(&updateRoom); err != nil {
+		response.SendSingleResponseError(
+			ctx,
+			http.StatusBadRequest,
+			err.Error(),
+		)
+
+		return
+	}
+
+	updatedRoom, code, err := rc.ru.UpdateRoomByIdIsAvailableOnly(updateRoom.Id, updateRoom.IsAvailable)
+
+	if err != nil {
+		response.SendSingleResponseError(
+			ctx,
+			code,
+			err.Error(),
+		)
+
+		return
+	}
+
+	response.SendSingleResponse(
+		ctx,
+		updatedRoom,
+		"Success Update Room",
+	)
 }
 
-func NewRoomController(ru usecase.RoomUsecase, rg *gin.Engine) *roomController {
+func (rc *roomController) Route() {
+	group := rc.rg.Group("/room")
+	//group.Use()
+
+	group.POST("/", rc.authMiddleware.RequireToken(utils.USER_ROLE_ADMIN), rc.createRoomHandler)
+	group.GET("/", rc.getAllroomHandler)
+	group.GET("/:idOrName", rc.getRoomByIdOrNameHandler)
+	group.PUT("/", rc.authMiddleware.RequireToken(utils.USER_ROLE_ADMIN), rc.updateRoomByIdHandler)
+	group.PUT("/status", rc.authMiddleware.RequireToken(
+		utils.USER_ROLE_ADMIN, utils.USER_ROLE_GA), rc.updateRoomByIdIsAvailableHandler)
+	group.DELETE("/:id", rc.authMiddleware.RequireToken(
+		utils.USER_ROLE_ADMIN), rc.deleteRoomByIdHandler)
+}
+
+func NewRoomController(ru usecase.RoomUsecase, rg *gin.Engine, auth_middleware middleware.AuthMiddleware) *roomController {
 	return &roomController{
-		ru: ru,
-		rg: &rg.RouterGroup,
+		ru:             ru,
+		rg:             &rg.RouterGroup,
+		authMiddleware: auth_middleware,
 	}
 }

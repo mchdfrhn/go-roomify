@@ -1,10 +1,12 @@
 package controller
 
 import (
+	"go-roomify/middleware"
 	"go-roomify/model"
 	"go-roomify/model/dto/request"
 	"go-roomify/model/dto/response"
 	"go-roomify/usecase"
+	"go-roomify/utils"
 	"net/http"
 	"strconv"
 
@@ -12,8 +14,9 @@ import (
 )
 
 type DivisionController struct {
-	uc usecase.DivisionUsecase
-	rg *gin.RouterGroup
+	uc             usecase.DivisionUsecase
+	rg             *gin.RouterGroup
+	authMiddleware middleware.AuthMiddleware
 }
 
 func (c *DivisionController) GetDivisions(ctx *gin.Context) {
@@ -100,6 +103,8 @@ func (c *DivisionController) DeleteDivision(ctx *gin.Context) {
 
 func (c *DivisionController) Route() {
 	rg := c.rg.Group("/divisions")
+	rg.Use(c.authMiddleware.RequireToken(utils.USER_ROLE_ADMIN))
+
 	rg.GET("/", c.GetDivisions)
 	rg.GET("/:id", c.GetDivisionById)
 	rg.POST("/", c.CreateDivision)
@@ -107,11 +112,10 @@ func (c *DivisionController) Route() {
 	rg.DELETE("/:id", c.DeleteDivision)
 }
 
-func NewDivisionController(
-	uc usecase.DivisionUsecase,
-	router *gin.Engine) *DivisionController {
+func NewDivisionController(uc usecase.DivisionUsecase, router *gin.Engine, auth_middleware middleware.AuthMiddleware) *DivisionController {
 	return &DivisionController{
-		uc: uc,
-		rg: &router.RouterGroup,
+		uc:             uc,
+		rg:             &router.RouterGroup,
+		authMiddleware: auth_middleware,
 	}
 }

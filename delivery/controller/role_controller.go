@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"go-roomify/middleware"
 	"go-roomify/model"
 	"go-roomify/model/dto/response"
 	"go-roomify/usecase"
+	"go-roomify/utils"
 	"net/http"
 	"strconv"
 
@@ -12,8 +14,9 @@ import (
 )
 
 type RoleController struct {
-	uc usecase.RoleUsecase
-	rg *gin.RouterGroup
+	uc             usecase.RoleUsecase
+	rg             *gin.RouterGroup
+	authMiddleware middleware.AuthMiddleware
 	// authMiddleware middleware.AuthMiddleware
 }
 
@@ -122,6 +125,8 @@ func (rc *RoleController) updateHandler(ctx *gin.Context) {
 func (rc *RoleController) Route() {
 	router := rc.rg.Group("/roles")
 	// router.Use(rc.authMiddleware.RequireToken("ADMIN"))
+	router.Use(rc.authMiddleware.RequireToken(utils.USER_ROLE_ADMIN))
+
 	router.POST("", rc.registerHandler)
 	router.GET("", rc.findAllPageHandler)
 	router.GET("/:id", rc.findByIdHandler)
@@ -129,14 +134,10 @@ func (rc *RoleController) Route() {
 	router.PUT("", rc.updateHandler)
 }
 
-func NewRoleController(
-	uc usecase.RoleUsecase,
-	router *gin.Engine,
-	//authMiddleware middleware.AuthMiddleware,
-) *RoleController {
+func NewRoleController(uc usecase.RoleUsecase, router *gin.Engine, auth_middleware middleware.AuthMiddleware) *RoleController {
 	return &RoleController{
-		uc: uc,
-		rg: &router.RouterGroup,
-		// authMiddleware: authMiddleware,
+		uc:             uc,
+		rg:             &router.RouterGroup,
+		authMiddleware: auth_middleware,
 	}
 }

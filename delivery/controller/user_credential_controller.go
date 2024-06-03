@@ -1,20 +1,22 @@
 package controller
 
 import (
+	"fmt"
+	"go-roomify/middleware"
 	"go-roomify/model"
 	"go-roomify/model/dto/request"
 	"go-roomify/model/dto/response"
 	"go-roomify/usecase"
 	"net/http"
-	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type UserCredentialController struct {
-	uc usecase.UserCredentialUsecase
-	rg *gin.RouterGroup
+	uc             usecase.UserCredentialUsecase
+	rg             *gin.RouterGroup
+	authMiddleware middleware.AuthMiddleware
 }
 
 func (self *UserCredentialController) loginHandler(ctx *gin.Context) {
@@ -97,7 +99,7 @@ func (self *UserCredentialController) updatePasswordHandler(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, response.Status{
-		Code: http.StatusOK,
+		Code:        http.StatusOK,
 		Description: "Success Update User Password",
 	})
 }
@@ -116,24 +118,27 @@ func (self *UserCredentialController) deleteHandler(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, response.Status{
-		Code: http.StatusOK,
+		Code:        http.StatusOK,
 		Description: "Success Delete User Data",
 	})
 }
 
 func (self *UserCredentialController) Route() {
 	router := self.rg.Group("/auth")
+
 	router.POST("/login", self.loginHandler)
-	router.GET("/user", self.getListHandler)
-	router.GET("/user/:id", self.getByIdHandler)
-	router.POST("/user", self.createNewHandler)
-	router.PUT("/user", self.updatePasswordHandler)
-	router.DELETE("/user/:id", self.deleteHandler)
+
+	router.GET("/user/:id", self.authMiddleware.RequireToken("admin"), self.getByIdHandler)
+	router.POST("/user", self.authMiddleware.RequireToken("admin"), self.createNewHandler)
+	router.PUT("/user", self.authMiddleware.RequireToken("admin"), self.updatePasswordHandler)
+	router.DELETE("/user/:id", self.authMiddleware.RequireToken("admin"), self.deleteHandler)
+	router.GET("/user", self.authMiddleware.RequireToken("admin"), self.getListHandler)
 }
 
-func NewUserCredentialController(uc usecase.UserCredentialUsecase, router *gin.Engine) *UserCredentialController {
+func NewUserCredentialController(uc usecase.UserCredentialUsecase, router *gin.Engine, auth_middleware middleware.AuthMiddleware) *UserCredentialController {
 	return &UserCredentialController{
-		uc: uc,
-		rg : &router.RouterGroup,
+		uc:             uc,
+		rg:             &router.RouterGroup,
+		authMiddleware: auth_middleware,
 	}
 }

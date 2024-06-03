@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"go-roomify/middleware"
 	"go-roomify/model/dto/request"
 	"go-roomify/model/dto/response"
 	"go-roomify/usecase"
@@ -12,8 +13,9 @@ import (
 )
 
 type UserController struct {
-	uc usecase.UserProfileUsecase
-	rg *gin.RouterGroup
+	uc             usecase.UserProfileUsecase
+	rg             *gin.RouterGroup
+	authMiddleware middleware.AuthMiddleware
 }
 
 func (cc *UserController) findAllPageHandler(ctx *gin.Context) {
@@ -132,6 +134,8 @@ func (cc *UserController) deleteByIdHandler(ctx *gin.Context) {
 
 func (cc *UserController) Route() {
 	router := cc.rg.Group("/user")
+	router.Use(cc.authMiddleware.RequireToken("admin"))
+
 	router.GET("", cc.findAllPageHandler)
 	router.GET("/:id", cc.findByIdHandler)
 	router.GET("user/:username", cc.findByUsernameHandler)
@@ -140,12 +144,10 @@ func (cc *UserController) Route() {
 	router.DELETE("/:id", cc.deleteByIdHandler)
 }
 
-func NewUserController(
-	uc usecase.UserProfileUsecase,
-	router *gin.Engine,
-) *UserController {
+func NewUserController(uc usecase.UserProfileUsecase, router *gin.Engine, auth_middleware middleware.AuthMiddleware) *UserController {
 	return &UserController{
-		uc: uc,
-		rg: &router.RouterGroup,
+		uc:             uc,
+		rg:             &router.RouterGroup,
+		authMiddleware: auth_middleware,
 	}
 }

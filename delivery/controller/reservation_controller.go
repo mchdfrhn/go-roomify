@@ -86,8 +86,6 @@ func (self *ReservationController) getListByTokenHandler(ctx *gin.Context) {
 		FilterStatus: ctx.DefaultQuery("fl_status", ""),
 	}
 
-	fmt.Println(fl_reserv_get_list)
-
 	r_reservation, err := self.uc.GetListByToken(fl_reserv_get_list)
 
 	if err != nil {
@@ -103,7 +101,10 @@ func (self *ReservationController) getListByTokenHandler(ctx *gin.Context) {
 
 func (self *ReservationController) Route() {
 	router := self.rg.Group("/reservation")
-	router.Use(self.authMiddleware.RequireToken("admin", "employee", "ga"))
+	router.Use(self.authMiddleware.RequireToken(
+		utils.USER_ROLE_ADMIN,
+		utils.USER_ROLE_GA,
+		utils.USER_ROLE_EMPLOYEE))
 	// router.POST("/register", self.createNewHandler, self.authMiddleware.RequireToken("admin"))
 	// router.POST("/delete", self.createNewHandler, self.authMiddleware.RequireToken("admin"))
 

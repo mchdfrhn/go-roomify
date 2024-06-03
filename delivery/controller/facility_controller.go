@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"go-roomify/middleware"
 	"go-roomify/model"
 	"go-roomify/model/dto/response"
 	"go-roomify/usecase"
+	"go-roomify/utils"
 	"net/http"
 	"strconv"
 
@@ -12,15 +14,9 @@ import (
 )
 
 type FacilityController struct {
-	uf usecase.FacilityUsecase
-	rg *gin.RouterGroup
-}
-
-func NewFacilityController(uf usecase.FacilityUsecase, router *gin.Engine) *FacilityController {
-	return &FacilityController{
-		uf: uf,
-		rg: &router.RouterGroup,
-	}
+	uf             usecase.FacilityUsecase
+	rg             *gin.RouterGroup
+	authMiddleware middleware.AuthMiddleware
 }
 
 func (fc *FacilityController) FindAllPagingHandler(c *gin.Context) {
@@ -152,9 +148,19 @@ func (fc *FacilityController) DeleteHandler(c *gin.Context) {
 
 func (fc *FacilityController) Route() {
 	router := fc.rg.Group("/facility")
+	//router.Use(fc.authMiddleware.RequireToken("admin"))
+
 	router.GET("", fc.FindAllPagingHandler)
 	router.GET("/:id", fc.FindByIdHandler)
-	router.POST("", fc.InsertHandler)
-	router.PUT("", fc.UpdateHandler)
-	router.DELETE("/:id", fc.DeleteHandler)
+	router.POST("", fc.authMiddleware.RequireToken(utils.USER_ROLE_ADMIN), fc.InsertHandler)
+	router.PUT("", fc.authMiddleware.RequireToken(utils.USER_ROLE_ADMIN), fc.UpdateHandler)
+	router.DELETE("/:id", fc.authMiddleware.RequireToken(utils.USER_ROLE_ADMIN), fc.DeleteHandler)
+}
+
+func NewFacilityController(uf usecase.FacilityUsecase, router *gin.Engine, auth_middleware middleware.AuthMiddleware) *FacilityController {
+	return &FacilityController{
+		uf:             uf,
+		rg:             &router.RouterGroup,
+		authMiddleware: auth_middleware,
+	}
 }
