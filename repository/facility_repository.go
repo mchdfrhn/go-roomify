@@ -7,10 +7,10 @@ import (
 	"go-roomify/model/dto"
 	"go-roomify/utils"
 	"go-roomify/utils/query"
+	"strconv"
 )
 
 type FacilityRepository interface {
-	GetListFacility() ([]model.Facility, error)
 	GetFacilityById(id string) (model.Facility, error)
 	GetPagingFacility(page int, size int) ([]model.Facility, dto.Paging, error)
 	InsertFacility(newFacility model.Facility) error
@@ -28,35 +28,6 @@ func NewFacilityRepository(db *sql.DB) FacilityRepository {
 	}
 }
 
-func (f *facilityRepository) GetListFacility() ([]model.Facility, error) {
-	qselect := query.QSelect{DB: f.db}
-	qselect.Table("mst_facility")
-	qselect.Column(
-		"id",
-		"name",
-		"room_id",
-	)
-	rows, err := qselect.Run()
-	if err != nil {
-		return nil, err
-	}
-
-	var facilities []model.Facility
-	for rows.Next() {
-		var facility model.Facility
-		err = rows.Scan(
-			&facility.Id,
-			&facility.Name,
-			&facility.RoomId,
-		)
-		if err != nil {
-			return nil, err
-		}
-		facilities = append(facilities, facility)
-	}
-	return facilities, nil
-}
-
 func (f *facilityRepository) GetFacilityById(id string) (model.Facility, error) {
 	var facility model.Facility
 	qselect := query.QSelect{DB: f.db}
@@ -64,6 +35,8 @@ func (f *facilityRepository) GetFacilityById(id string) (model.Facility, error) 
 	qselect.Column(
 		"id",
 		"name",
+		"is_available",
+		"is_reserveable",
 		"room_id",
 	)
 	qselect.Where("id", "=", id)
@@ -71,6 +44,8 @@ func (f *facilityRepository) GetFacilityById(id string) (model.Facility, error) 
 	err := rows.Scan(
 		&facility.Id,
 		&facility.Name,
+		&facility.IsAvailable,
+		&facility.IsReserveable,
 		&facility.RoomId,
 	)
 
@@ -89,6 +64,8 @@ func (f *facilityRepository) GetPagingFacility(page int, size int) ([]model.Faci
 	qselect.Column(
 		"id",
 		"name",
+		"is_available",
+		"is_reserveable",
 		"room_id",
 	)
 	qselect.Limit(size)
@@ -105,6 +82,8 @@ func (f *facilityRepository) GetPagingFacility(page int, size int) ([]model.Faci
 		err = rows.Scan(
 			&facility.Id,
 			&facility.Name,
+			&facility.IsAvailable,
+			&facility.IsReserveable,
 			&facility.RoomId,
 		)
 		if err != nil {
@@ -134,11 +113,15 @@ func (f *facilityRepository) InsertFacility(newFacility model.Facility) error {
 	qinsert.Column(
 		"id",
 		"name",
+		"is_available",
+		"is_reserveable",
 		"room_id",
 	)
 	qinsert.Values(
 		newFacility.Id,
 		newFacility.Name,
+		strconv.FormatBool(newFacility.IsAvailable),
+		strconv.FormatBool(newFacility.IsReserveable),
 		newFacility.RoomId,
 	)
 
@@ -156,6 +139,8 @@ func (f *facilityRepository) UpdateFacility(newFacility model.Facility) error {
 	qupdate := query.QUpdate{DB: f.db}
 	qupdate.Table("mst_facility")
 	qupdate.Set("name", newFacility.Name)
+	qupdate.Set("is_available", strconv.FormatBool(newFacility.IsAvailable))
+	qupdate.Set("is_reserveable", strconv.FormatBool(newFacility.IsReserveable))
 	qupdate.Set("room_id", newFacility.RoomId)
 	qupdate.Where("id", "=", newFacility.Id)
 
