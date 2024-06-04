@@ -13,4 +13,5 @@ type ReservationGetListFilter struct {
 	FilterStatus    string
 	FilterStartDate string
 	FilterEndDate   string
+	FilterRoomId    string
 }

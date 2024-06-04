@@ -186,10 +186,12 @@ func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.Res
 	qselect.Join("tx_reservation_status AS rvs", "rv.reservation_status_id = rvs.id")
 	qselect.Join("tx_reservation_detail AS rvd", "rv.id = rvd.reservation_id")
 	qselect.Join("mst_room AS room", "rvd.room_id = room.id")
+	qselect.Join("mst_facility AS fc", "fc.room_id = room.id")
 
 	filter_status := fl_reserv_get_list.FilterStatus
 	filter_start_date := fl_reserv_get_list.FilterStartDate
 	filter_end_date := fl_reserv_get_list.FilterEndDate
+	filter_room_id := fl_reserv_get_list.FilterRoomId
 	resrv_id := fl_reserv_get_list.ReservationId
 	user_id := fl_reserv_get_list.UserId
 	user_role := fl_reserv_get_list.UserRole
@@ -211,6 +213,9 @@ func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.Res
 		}
 		if filter_end_date != "" {
 			qselect.AndWhere("rv.reservation_date", "<=", filter_end_date)
+		}
+		if filter_room_id != "" {
+			qselect.AndWhere("room.id", "=", filter_room_id)
 		}
 	}
 

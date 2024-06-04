@@ -86,6 +86,7 @@ func (self *ReservationController) getListByTokenHandler(ctx *gin.Context) {
 		FilterStatus:    ctx.DefaultQuery("fl_status", ""),
 		FilterStartDate: ctx.DefaultQuery("fl_start_date", ""),
 		FilterEndDate:   ctx.DefaultQuery("fl_end_date", ""),
+		FilterRoomId:    ctx.DefaultQuery("fl_room_id", ""),
 	}
 
 	r_reservation, err := self.uc.GetListByToken(fl_reserv_get_list)
