@@ -13,12 +13,12 @@ type ReportUsecase interface{
 }
 
 type reportUsecase struct{
-	reservationRepo repository.ReservationRepository
+	reportRepo repository.ReportRepository
 }
 
 func (ru *reportUsecase) DownloadReportByYear(startYear string, endYear string) (*sql.Rows, int, error) {
 	if startYear == "" || endYear == "" {
-		return nil, http.StatusBadRequest, fmt.Errorf("Query parameter 's' or 'e' must not be empty")
+		return nil, http.StatusBadRequest, fmt.Errorf("query parameter 's' or 'e' must not be empty")
 	}
 
 	_, err := time.Parse("2006-1-2", startYear)
@@ -31,7 +31,7 @@ func (ru *reportUsecase) DownloadReportByYear(startYear string, endYear string) 
 		return nil, http.StatusBadRequest, fmt.Errorf("format query e be YYYY-MM-DD")
 	}
 
-	rows, err := ru.reservationRepo.GetReservationByYear( startYear, endYear )
+	rows, err := ru.reportRepo.GetReportByYear( startYear, endYear )
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
@@ -41,8 +41,8 @@ func (ru *reportUsecase) DownloadReportByYear(startYear string, endYear string) 
 }
 
 
-func NewReportUsecase( reservationRepo repository.ReservationRepository ) ReportUsecase{
+func NewReportUsecase( reportRepo repository.ReportRepository ) ReportUsecase{
 	return &reportUsecase{
-		reservationRepo: reservationRepo,
+		reportRepo: reportRepo,
 	}
 }
