@@ -29,7 +29,7 @@ var UserProfile1 = model.UserProfile{
 	},
 	Address:     "123 Main St, Springfield",
 	PhoneNumber: "555-1234",
-	User: model.User{
+	User: model.UserCredential{
 		Id:       "u123",
 		Username: "johndoe",
 		Password: "securepassword",
@@ -51,7 +51,7 @@ var UserProfile2 = model.UserProfile{
 	},
 	Address:     "456 Elm St, Springfield",
 	PhoneNumber: "555-5678",
-	User: model.User{
+	User: model.UserCredential{
 		Id:       "u124",
 		Username: "janesmith",
 		Password: "anothersecurepassword",
@@ -73,7 +73,7 @@ var UserProfile3 = model.UserProfile{
 	},
 	Address:     "789 Oak St, Springfield",
 	PhoneNumber: "555-8765",
-	User: model.User{
+	User: model.UserCredential{
 		Id:       "u125",
 		Username: "alicejohnson",
 		Password: "yetanothersecurepassword",

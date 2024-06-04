@@ -7,7 +7,7 @@ import (
 )
 
 func SendSingleResponseCreated(ctx *gin.Context,data any,descriptionMsg string) {
-	ctx.JSON(http.StatusCreated, &SingleResponse{
+	ctx.JSON(http.StatusOK, &SingleResponse{
 		Status: Status{
 			Code: http.StatusCreated,
 			Description: descriptionMsg,
