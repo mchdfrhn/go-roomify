@@ -44,30 +44,36 @@ func (cc *UserController) findByIdHandler(ctx *gin.Context) {
 	id := ctx.Param("id")
 	user, err := cc.uc.GetById(id)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
+		response.SendSingleResponseError(
+			ctx,
+			http.StatusBadRequest,
+			err.Error(),
+		)
 		return
 	}
-	ctx.JSON(http.StatusCreated, gin.H{
-		"message": "Success Get User By Id",
-		"data":    user,
-	})
+	response.SendSingleResponse(
+		ctx,
+		user,
+		"Success Get User By Id",
+	)
 }
 
 func (cc *UserController) findByUsernameHandler(ctx *gin.Context) {
 	username := ctx.Param("username")
 	user, err := cc.uc.GetByUsername(username)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
+		response.SendSingleResponseError(
+			ctx,
+			http.StatusBadRequest,
+			err.Error(),
+		)
 		return
 	}
-	ctx.JSON(http.StatusCreated, gin.H{
-		"message": "Success Get User By Id",
-		"data":    user,
-	})
+	response.SendSingleResponse(
+		ctx,
+		user,
+		"Success Get User By Username",
+	)
 }
 
 func (cc *UserController) registerHandler(ctx *gin.Context) {
@@ -100,36 +106,45 @@ func (cc *UserController) registerHandler(ctx *gin.Context) {
 func (cc *UserController) updateHandler(ctx *gin.Context) {
 	var newUser request.UserProfileRequest
 	if err := ctx.ShouldBindJSON(&newUser); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
+		response.SendSingleResponseError(
+			ctx,
+			http.StatusBadRequest,
+			err.Error(),
+		)
 		return
 	}
 	user, err := cc.uc.Update(newUser)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
+		response.SendSingleResponseError(
+			ctx,
+			http.StatusBadRequest,
+			err.Error(),
+		)
 		return
 	}
-	ctx.JSON(http.StatusCreated, gin.H{
-		"message": "Success Update User By Id",
-		"data":    user,
-	})
+	response.SendSingleResponse(
+		ctx,
+		user,
+		"Success Update User By Id",
+	)
 }
 
 func (cc *UserController) deleteByIdHandler(ctx *gin.Context) {
 	id := ctx.Param("id")
 	err := cc.uc.Delete(id)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
+		response.SendSingleResponseError(
+			ctx,
+			http.StatusBadRequest,
+			err.Error(),
+		)
 		return
 	}
-	ctx.JSON(http.StatusCreated, gin.H{
-		"message": "Success Delete User By Id",
-	})
+	response.SendSingleResponse(
+		ctx,
+		http.StatusOK,
+		"Success Delete User By Id",
+	)
 }
 
 func (cc *UserController) Route() {
