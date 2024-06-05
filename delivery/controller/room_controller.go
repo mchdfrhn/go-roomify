@@ -186,6 +186,27 @@ func (rc *roomController) updateRoomByIdIsAvailableHandler(ctx *gin.Context) {
 	)
 }
 
+func (rc *roomController) GetRoomAvailableHandler(ctx *gin.Context) {
+
+	availableRoom, code, err := rc.ru.GetAvailableRoom()
+	if err != nil {
+		response.SendSingleResponseError(
+			ctx,
+			code,
+			err.Error(),
+		)
+
+		return
+	}
+
+	response.SendSingleResponse(
+		ctx,
+		availableRoom,
+		"Success get available rooms",
+	)
+
+}
+
 func (rc *roomController) Route() {
 	group := rc.rg.Group("/room")
 	//group.Use()
@@ -222,6 +243,4 @@ func NewRoomController(ru usecase.RoomUsecase, rg *gin.Engine, auth_middleware m
 		rg:             &rg.RouterGroup,
 		authMiddleware: auth_middleware,
 	}
->>>>>>> origin/room
 }
-

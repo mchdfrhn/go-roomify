@@ -130,23 +130,6 @@ func (rr *roomRepository) GetAllRoom(page int, size int) ([]any, dto.Paging, err
 			&currentFacility.IsReserveable,
 		)
 
-=======
-		var currentFacility model.Facility
-
-		err := rows.Scan(
-			&currentRoom.Id,
-			&currentRoom.Name,
-			&currentRoom.RoomType,
-			&currentRoom.Capacity,
-			&currentRoom.IsAvailable,
-			&currentRoom.IsReserveable,
-			&currentFacility.Id,
-			&currentFacility.Name,
-			&currentFacility.RoomId,
-			&currentFacility.IsAvailable,
-			&currentFacility.IsReserveable,
-		)
->>>>>>> origin/room
 		if err != nil {
 			return nil, dto.Paging{}, err
 		}
@@ -157,11 +140,11 @@ func (rr *roomRepository) GetAllRoom(page int, size int) ([]any, dto.Paging, err
 			}
 
 			roomResponse = response.RoomResponse{
-				Id: currentRoom.Id,
-				Name: currentRoom.Name,
-				RoomType: currentRoom.RoomType,
-				Capacity: currentRoom.Capacity,
-				IsAvailable: currentRoom.IsAvailable,
+				Id:            currentRoom.Id,
+				Name:          currentRoom.Name,
+				RoomType:      currentRoom.RoomType,
+				Capacity:      currentRoom.Capacity,
+				IsAvailable:   currentRoom.IsAvailable,
 				IsReserveable: currentRoom.IsReserveable,
 			}
 		}
@@ -338,11 +321,11 @@ func (rr *roomRepository) GetAvailableRoom() ([]response.RoomResponse, error) {
 			}
 
 			roomResponse = response.RoomResponse{
-				Id: currentRoom.Id,
-				Name: currentRoom.Name,
-				RoomType: currentRoom.RoomType,
-				Capacity: currentRoom.Capacity,
-				IsAvailable: currentRoom.IsAvailable,
+				Id:            currentRoom.Id,
+				Name:          currentRoom.Name,
+				RoomType:      currentRoom.RoomType,
+				Capacity:      currentRoom.Capacity,
+				IsAvailable:   currentRoom.IsAvailable,
 				IsReserveable: currentRoom.IsReserveable,
 			}
 		}
