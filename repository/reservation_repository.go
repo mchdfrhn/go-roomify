@@ -19,7 +19,6 @@ type ReservationRepository interface {
 	CreateRequest(new_request model.Reservation) (model.Reservation, error)
 	ChangeStatus(reserv_status request.ReservationStatusRequest) error
 	GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, error)
-	GetReservationByYear(startYear string, endYear string) (*sql.Rows, error)
 }
 
 type reservationRepository struct {
@@ -258,67 +257,6 @@ func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.Res
 	rows.Close()
 
 	return rows_reserv_response, nil
-}
-
-func (self *reservationRepository) GetReservationByYear(startYear string, endYear string) (*sql.Rows, error) {
-
-	query := query.QSelect{DB: self.db}
-
-	rows, err := query.Table(
-		"tx_reservation AS tr",
-	).Column(
-		"*",
-	).Join(
-		"mst_user_profile AS up",
-		"up.id = tr.user_profile_id",
-	).Join(
-		"mst_division AS div",
-		"div.id = up.division_id",
-	).Join(
-		"mst_role AS role",
-		"role.id = up.role_id",
-	).Join(
-		"tx_reservation_detail AS trd",
-		"trd.reservation_id = tr.id",
-	).Join(
-		"mst_room AS r",
-		"r.id = trd.room_id",
-	).Join(
-		"mst_facility AS f",
-		"f.room_id = r.id",
-	).Join(
-		"tx_reservation_status AS trs",
-		"trs.id = tr.reservation_status_id",
-	).Where(
-		"reservation_date",
-		">=",
-		startYear,
-	).AndWhere(
-		"reservation_date",
-		"<=",
-		endYear,
-	).Run()
-
-	// rows, err := query.Table(
-	// 	"t_tes",
-	// ).Column(
-	// 	"*",
-	// ).Where(
-	// 	"date",
-	// 	">=",
-	// 	startYear,
-	// ).AndWhere(
-	// 	"date",
-	// 	"<=",
-	// 	endYear,
-	// ).Run()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return rows, nil
-
 }
 
 func NewReservationRepository(db *sql.DB) ReservationRepository {
