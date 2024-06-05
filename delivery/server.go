@@ -105,8 +105,8 @@ func NewServer() *Server {
 	resevationUc := usecase.NewReservationUsecase(resevationRepo)
 
 	// Report
-	//reportRepo := repository.NewReportRepository(db.Conn())
-	reportUc := usecase.NewReportUsecase(resevationRepo)
+	reportRepo := repository.NewReportRepository(db.Conn())
+	reportUc := usecase.NewReportUsecase(reportRepo)
 
 	// Gin Engine
 	engine := gin.Default()
