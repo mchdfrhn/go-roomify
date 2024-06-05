@@ -2,7 +2,7 @@ package usecase
 
 import (
 	//"errors"
-	"go-roomify/model"
+
 	"go-roomify/model/dto/request"
 	"go-roomify/model/dto/response"
 	"go-roomify/repository"
@@ -15,7 +15,7 @@ import (
 )
 
 type ReservationUsecase interface {
-	CreateRequest(new_request model.Reservation) (model.Reservation, error)
+	CreateRequest(new_request request.ReservationRequest) ([]response.ReservationResponse, error)
 	ChangeStatus(reserv_status request.ReservationStatusRequest) error
 	GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, error)
 }
@@ -24,19 +24,30 @@ type reservationUsecase struct {
 	repo repository.ReservationRepository
 }
 
-func (self *reservationUsecase) CreateRequest(new_request model.Reservation) (model.Reservation, error) {
+func (self *reservationUsecase) CreateRequest(new_request request.ReservationRequest) ([]response.ReservationResponse, error) {
 	new_request.Id = uuid.NewString()
-	new_request.Status.Id = utils.RESERV_STATUS_PENDING
-	//new_request.Description = ""
+	new_request.StatusId = utils.RESERV_STATUS_PENDING
 
 	// Set Time Now fo Reservation DateTime
 	currentTime := time.Now()
 	new_request.ReservationDate = currentTime.Format("2006-01-02 15:04:05")
 
 	// Set ID for reservation request detail
-	new_request.Detail.Id = uuid.NewString()
+	for i, _ := range new_request.AdditionalFacility {
+		new_request.AdditionalFacility[i].Id = uuid.NewString()
+	}
 
-	return self.repo.CreateRequest(new_request)
+	err := self.repo.CreateRequest(new_request)
+
+	if err != nil {
+		return nil, err
+	}
+
+	fl_reserv_get_list := request.ReservationGetListFilter{
+		ReservationId: new_request.Id,
+	}
+
+	return self.GetListByToken(fl_reserv_get_list)
 }
 
 func (self *reservationUsecase) ChangeStatus(reserv_status request.ReservationStatusRequest) error {

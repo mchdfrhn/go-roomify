@@ -26,16 +26,18 @@ func (self *QInsert) Column(col_name ...string) *QInsert {
 }
 
 func (self *QInsert) Values(col_value ...any) *QInsert {
+	var qvalues_str []string
 	for _, value := range col_value {
 		self.param_index += 1
 		self.param_value = append(self.param_value, value)
-		self.qvalues = append(self.qvalues, fmt.Sprintf("$%d", self.param_index))
+		qvalues_str = append(qvalues_str, fmt.Sprintf("$%d", self.param_index))
 	}
+	self.qvalues = append(self.qvalues, "("+strings.Join(qvalues_str, ",")+")")
 	return self
 }
 
 func (self *QInsert) GetQuery() string {
-	query := fmt.Sprintf(" INSERT INTO %s (%s) VALUES (%s)",
+	query := fmt.Sprintf(" INSERT INTO %s (%s) VALUES %s",
 		self.qtable,
 		strings.Join(self.qcolumn, ","),
 		strings.Join(self.qvalues, ","))
@@ -43,7 +45,7 @@ func (self *QInsert) GetQuery() string {
 }
 
 func (self *QInsert) GetQueryReturn(col_return ...string) string {
-	query := fmt.Sprintf(" INSERT INTO %s (%s) VALUES (%s) RETURNING %s",
+	query := fmt.Sprintf(" INSERT INTO %s (%s) VALUES %s RETURNING %s",
 		self.qtable,
 		strings.Join(self.qcolumn, ","),
 		strings.Join(self.qvalues, ","),
