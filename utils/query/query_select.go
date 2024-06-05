@@ -56,6 +56,11 @@ func (self *QSelect) AndWhere(condition string, operator string, value any) *QSe
 	return self.Where(" AND "+condition, operator, value)
 }
 
+func (self *QSelect) LeftJoin(tbl_name string, condition string) *QSelect {
+	self.qjoin += fmt.Sprintf(" LEFT JOIN %s ON %s ", tbl_name, condition)
+	return self
+}
+
 func (self *QSelect) Join(tbl_name string, condition string) *QSelect {
 	self.qjoin += fmt.Sprintf(" JOIN %s ON %s ", tbl_name, condition)
 	return self

@@ -13,8 +13,8 @@ import (
 type RoomRepository interface {
 	CreateRoom(roomModel model.Room) error
 	GetRoomIdIfExist(name string, roomtype string) (string, error)
-	GetAllRoom(page int, size int) ([]any, dto.Paging, error)
-	GetRoomByIdOrName(idOrNameRoom string) ([]model.Room, error)
+	GetAllRoom(page int, skip int, size int) ([]response.RoomResponse, dto.Paging, error)
+	GetRoomByIdOrName(idOrNameRoom string) ([]response.RoomResponse, error)
 	UpdateRoomById(updateRoom model.Room) (model.Room, error)
 	DeleteRoomById(roomId string) error
 	GetAvailableRoom() ([]response.RoomResponse, error)
@@ -25,7 +25,6 @@ type roomRepository struct {
 }
 
 func (rr *roomRepository) CreateRoom(roomModel model.Room) error {
-
 	query := query.QInsert{DB: rr.db}
 
 	_, err := query.Table(
@@ -36,12 +35,14 @@ func (rr *roomRepository) CreateRoom(roomModel model.Room) error {
 		"roomtype",
 		"capacity",
 		"is_available",
+		"is_reserveable",
 	).Values(
 		roomModel.Id,
 		roomModel.Name,
 		roomModel.RoomType,
 		roomModel.Capacity,
 		roomModel.IsAvailable,
+		roomModel.IsReserveable,
 	).Run()
 
 	if err != nil {
@@ -52,7 +53,6 @@ func (rr *roomRepository) CreateRoom(roomModel model.Room) error {
 }
 
 func (rr *roomRepository) GetRoomIdIfExist(name string, roomtype string) (string, error) {
-
 	query := query.QSelect{DB: rr.db}
 	var idRoom string
 
@@ -77,9 +77,7 @@ func (rr *roomRepository) GetRoomIdIfExist(name string, roomtype string) (string
 	return idRoom, nil
 }
 
-func (rr *roomRepository) GetAllRoom(page int, size int) ([]any, dto.Paging, error) {
-
-	skip := (page - 1) * size
+func (rr *roomRepository) GetAllRoom(page int, skip int, size int) ([]response.RoomResponse, dto.Paging, error) {
 	queryAllRoom := query.QSelect{DB: rr.db}
 
 	subQueryTable := fmt.Sprintf(`
@@ -93,67 +91,27 @@ func (rr *roomRepository) GetAllRoom(page int, size int) ([]any, dto.Paging, err
 	rows, err := queryAllRoom.Table(
 		subQueryTable,
 	).Column(
-		"id",
-		"name",
-		"roomtype",
-		"capacity",
-		"is_available",
-		"is_reserveable",
-	).Limit(
-		size,
-	).Offset(
-		skip,
+		"r.id",
+		"r.name",
+		"r.roomtype",
+		"r.capacity",
+		"r.is_available",
+		"r.is_reserveable",
+		"COALESCE(f.id, 'null')",
+		"COALESCE(f.name, 'null')",
+		"COALESCE(f.room_id, 'null')",
+	).LeftJoin(
+		"mst_facility AS f",
+		"f.room_id = r.id",
 	).Run()
 
 	if err != nil {
 		return nil, dto.Paging{}, err
 	}
 
-	var responseData []any
-	var currentRoom model.Room
-	var roomResponse response.RoomResponse
-
-	for rows.Next() {
-		var currentFacility model.Facility
-
-		err := rows.Scan(
-			&currentRoom.Id,
-			&currentRoom.Name,
-			&currentRoom.RoomType,
-			&currentRoom.Capacity,
-			&currentRoom.IsAvailable,
-			&currentRoom.IsReserveable,
-			&currentFacility.Id,
-			&currentFacility.Name,
-			&currentFacility.RoomId,
-			&currentFacility.IsAvailable,
-			&currentFacility.IsReserveable,
-		)
-
-		if err != nil {
-			return nil, dto.Paging{}, err
-		}
-
-		if currentRoom.Id != roomResponse.Id {
-			if roomResponse.Id != "" {
-				responseData = append(responseData, roomResponse)
-			}
-
-			roomResponse = response.RoomResponse{
-				Id:            currentRoom.Id,
-				Name:          currentRoom.Name,
-				RoomType:      currentRoom.RoomType,
-				Capacity:      currentRoom.Capacity,
-				IsAvailable:   currentRoom.IsAvailable,
-				IsReserveable: currentRoom.IsReserveable,
-			}
-		}
-
-		roomResponse.Facilities = append(roomResponse.Facilities, currentFacility)
-	}
-
-	if roomResponse.Id != "" {
-		responseData = append(responseData, roomResponse)
+	responseData, err := rr.scanRoomAndFacility(rows)
+	if err != nil {
+		return nil, dto.Paging{}, err
 	}
 
 	var totalRows int
@@ -170,28 +128,32 @@ func (rr *roomRepository) GetAllRoom(page int, size int) ([]any, dto.Paging, err
 
 	resultPagingDto := utils.Paginate(page, size, totalRows)
 	return responseData, resultPagingDto, nil
-
 }
 
-func (rr *roomRepository) GetRoomByIdOrName(roomidOrName string) ([]model.Room, error) {
-
+func (rr *roomRepository) GetRoomByIdOrName(roomidOrName string) ([]response.RoomResponse, error) {
 	query := query.QSelect{DB: rr.db}
-	var findRoom []model.Room
 
 	rows, err := query.Table(
-		"mst_room",
+		"mst_room AS r",
 	).Column(
-		"id",
-		"name",
-		"roomtype",
-		"capacity",
-		"is_available",
+		"r.id",
+		"r.name",
+		"r.roomtype",
+		"r.capacity",
+		"r.is_available",
+		"r.is_reserveable",
+		"COALESCE(f.id, 'null')",
+		"COALESCE(f.name, 'null')",
+		"COALESCE(f.room_id, 'null')",
+	).LeftJoin(
+		"mst_facility AS f",
+		"f.room_id = r.id",
 	).Where(
-		"id",
+		"r.id",
 		"=",
 		roomidOrName,
 	).OrWhere(
-		"name",
+		"r.name",
 		"=",
 		roomidOrName,
 	).Run()
@@ -200,28 +162,15 @@ func (rr *roomRepository) GetRoomByIdOrName(roomidOrName string) ([]model.Room, 
 		return nil, err
 	}
 
-	for rows.Next() {
-		var dummyRoom model.Room
-		err = rows.Scan(
-			&dummyRoom.Id,
-			&dummyRoom.Name,
-			&dummyRoom.RoomType,
-			&dummyRoom.Capacity,
-			&dummyRoom.IsAvailable,
-		)
-
-		if err != nil {
-			return nil, err
-		}
-
-		findRoom = append(findRoom, dummyRoom)
+	responseData, err := rr.scanRoomAndFacility(rows)
+	if err != nil {
+		return nil, err
 	}
 
-	return findRoom, nil
+	return responseData, nil
 }
 
 func (rr *roomRepository) UpdateRoomById(updateRoom model.Room) (model.Room, error) {
-
 	query := query.QUpdate{DB: rr.db}
 
 	_, err := query.Table(
@@ -238,6 +187,9 @@ func (rr *roomRepository) UpdateRoomById(updateRoom model.Room) (model.Room, err
 	).Set(
 		"is_available",
 		updateRoom.IsAvailable,
+	).Set(
+		"is_reserveable",
+		updateRoom.IsReserveable,
 	).Where(
 		"id",
 		"=",
@@ -252,7 +204,6 @@ func (rr *roomRepository) UpdateRoomById(updateRoom model.Room) (model.Room, err
 }
 
 func (rr *roomRepository) DeleteRoomById(roomId string) error {
-
 	query := query.QDelete{DB: rr.db}
 
 	_, err := query.Table(
@@ -277,8 +228,16 @@ func (rr *roomRepository) GetAvailableRoom() ([]response.RoomResponse, error) {
 	rows, err := query.Table(
 		"mst_room AS r",
 	).Column(
-		"*",
-	).Join(
+		"r.id",
+		"r.name",
+		"r.roomtype",
+		"r.capacity",
+		"r.is_available",
+		"r.is_reserveable",
+		"COALESCE(f.id, 'null')",
+		"COALESCE(f.name, 'null')",
+		"COALESCE(f.room_id, 'null')",
+	).LeftJoin(
 		"mst_facility AS f",
 		"f.room_id = r.id",
 	).Where(
@@ -291,13 +250,22 @@ func (rr *roomRepository) GetAvailableRoom() ([]response.RoomResponse, error) {
 		return nil, err
 	}
 
+	responseData, err := rr.scanRoomAndFacility(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return responseData, nil
+}
+
+func (rr *roomRepository) scanRoomAndFacility(rows *sql.Rows) ([]response.RoomResponse, error){
 	var responseData []response.RoomResponse
-	var currentRoom model.Room
 	var roomResponse response.RoomResponse
 
 	for rows.Next() {
-		var currentFacility model.Facility
-
+		var currentRoom model.Room
+		var currentFacility response.FacilityForRoomResponse
+	
 		err := rows.Scan(
 			&currentRoom.Id,
 			&currentRoom.Name,
@@ -308,18 +276,16 @@ func (rr *roomRepository) GetAvailableRoom() ([]response.RoomResponse, error) {
 			&currentFacility.Id,
 			&currentFacility.Name,
 			&currentFacility.RoomId,
-			&currentFacility.IsAvailable,
-			&currentFacility.IsReserveable,
 		)
 		if err != nil {
 			return nil, err
 		}
-
+	
 		if currentRoom.Id != roomResponse.Id {
 			if roomResponse.Id != "" {
 				responseData = append(responseData, roomResponse)
 			}
-
+	
 			roomResponse = response.RoomResponse{
 				Id:            currentRoom.Id,
 				Name:          currentRoom.Name,
@@ -329,8 +295,10 @@ func (rr *roomRepository) GetAvailableRoom() ([]response.RoomResponse, error) {
 				IsReserveable: currentRoom.IsReserveable,
 			}
 		}
-
-		roomResponse.Facilities = append(roomResponse.Facilities, currentFacility)
+	
+		if currentFacility.Id != "null" {
+			roomResponse.Facilities = append(roomResponse.Facilities, currentFacility)
+		}
 	}
 
 	if roomResponse.Id != "" {

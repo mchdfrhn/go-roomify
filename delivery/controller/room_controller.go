@@ -19,7 +19,6 @@ type roomController struct {
 }
 
 func (rc *roomController) createRoomHandler(ctx *gin.Context) {
-
 	var roomRequest request.RoomRequest
 	if err := ctx.ShouldBindJSON(&roomRequest); err != nil {
 		response.SendSingleResponseError(
@@ -47,11 +46,9 @@ func (rc *roomController) createRoomHandler(ctx *gin.Context) {
 		createdRoom,
 		"Success Create Room",
 	)
-
 }
 
 func (rc *roomController) getAllroomHandler(ctx *gin.Context) {
-
 	paramPage := ctx.Query("page")
 	paramSize := ctx.Query("size")
 
@@ -72,11 +69,9 @@ func (rc *roomController) getAllroomHandler(ctx *gin.Context) {
 		"Success Get All Room",
 		paging,
 	)
-
 }
 
 func (rc *roomController) getRoomByIdOrNameHandler(ctx *gin.Context) {
-
 	roomIdOrName := ctx.Param("idOrName")
 
 	createdRoom, code, err := rc.ru.GetRoomByIdOrName(roomIdOrName)
@@ -95,7 +90,6 @@ func (rc *roomController) getRoomByIdOrNameHandler(ctx *gin.Context) {
 		createdRoom,
 		"Success Get data Room",
 	)
-
 }
 
 func (rc *roomController) updateRoomByIdHandler(ctx *gin.Context) {
@@ -128,11 +122,9 @@ func (rc *roomController) updateRoomByIdHandler(ctx *gin.Context) {
 		updatedRoom,
 		"Success Update Room",
 	)
-
 }
 
 func (rc *roomController) deleteRoomByIdHandler(ctx *gin.Context) {
-
 	roomId := ctx.Param("id")
 
 	code, err := rc.ru.DeleteRooomById(roomId)
@@ -146,12 +138,10 @@ func (rc *roomController) deleteRoomByIdHandler(ctx *gin.Context) {
 		return
 	}
 
-	response.SendSingleResponse(
+	response.SendSingleResponseDelete(
 		ctx,
-		code,
 		"Success delete data Room",
 	)
-
 }
 
 func (rc *roomController) updateRoomByIdIsAvailableHandler(ctx *gin.Context) {
@@ -187,7 +177,6 @@ func (rc *roomController) updateRoomByIdIsAvailableHandler(ctx *gin.Context) {
 }
 
 func (rc *roomController) GetRoomAvailableHandler(ctx *gin.Context) {
-
 	availableRoom, code, err := rc.ru.GetAvailableRoom()
 	if err != nil {
 		response.SendSingleResponseError(
@@ -204,37 +193,23 @@ func (rc *roomController) GetRoomAvailableHandler(ctx *gin.Context) {
 		availableRoom,
 		"Success get available rooms",
 	)
-
 }
 
 func (rc *roomController) Route() {
 	group := rc.rg.Group("/room")
-	//group.Use()
 
-	group.POST("/", rc.authMiddleware.RequireToken(utils.USER_ROLE_ADMIN), rc.createRoomHandler)
-	group.GET("/",
-		rc.authMiddleware.RequireToken(
-			utils.USER_ROLE_ADMIN,
-			utils.USER_ROLE_GA,
-			utils.USER_ROLE_EMPLOYEE),
-		rc.getAllroomHandler)
-	group.GET("/:idOrName",
-		rc.authMiddleware.RequireToken(
-			utils.USER_ROLE_ADMIN,
-			utils.USER_ROLE_GA,
-			utils.USER_ROLE_EMPLOYEE),
-		rc.getRoomByIdOrNameHandler)
-	group.PUT("/", rc.authMiddleware.RequireToken(utils.USER_ROLE_ADMIN), rc.updateRoomByIdHandler)
-	group.PUT("/status", rc.authMiddleware.RequireToken(
-		utils.USER_ROLE_ADMIN, utils.USER_ROLE_GA), rc.updateRoomByIdIsAvailableHandler)
-	group.DELETE("/:id", rc.authMiddleware.RequireToken(
-		utils.USER_ROLE_ADMIN), rc.deleteRoomByIdHandler)
-	group.GET("/available",
-		rc.authMiddleware.RequireToken(
-			utils.USER_ROLE_ADMIN,
-			utils.USER_ROLE_GA,
-			utils.USER_ROLE_EMPLOYEE),
-		rc.GetRoomAvailableHandler)
+	admin_Middleware := rc.authMiddleware.RequireToken(utils.USER_ROLE_ADMIN)
+	group.POST("/", admin_Middleware, rc.createRoomHandler)
+	group.PUT("/", admin_Middleware, rc.updateRoomByIdHandler)
+	group.DELETE("/:id", admin_Middleware, rc.deleteRoomByIdHandler)
+
+	admin_GA_Middleware := rc.authMiddleware.RequireToken(utils.USER_ROLE_ADMIN, utils.USER_ROLE_GA)
+	group.PUT("/status", admin_GA_Middleware, rc.updateRoomByIdIsAvailableHandler)
+
+	admin_GA_Employee_Middleware := rc.authMiddleware.RequireToken(utils.USER_ROLE_ADMIN, utils.USER_ROLE_GA, utils.USER_ROLE_EMPLOYEE)
+	group.GET("/", admin_GA_Employee_Middleware, rc.getAllroomHandler)
+	group.GET("/:idOrName", admin_GA_Employee_Middleware, rc.getRoomByIdOrNameHandler)
+	group.GET("/available", admin_GA_Employee_Middleware, rc.GetRoomAvailableHandler)
 }
 
 func NewRoomController(ru usecase.RoomUsecase, rg *gin.Engine, auth_middleware middleware.AuthMiddleware) *roomController {

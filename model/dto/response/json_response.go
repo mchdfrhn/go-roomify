@@ -37,6 +37,14 @@ func SendSinglePageResponse(ctx *gin.Context,data []any,descriptionMsg string,pa
 	})
 }
 
+func SendSingleResponseDelete(ctx *gin.Context,descriptionMsg string) {
+	ctx.JSON(http.StatusOK, &Status{
+			Code: http.StatusOK,
+			Description: descriptionMsg,
+		},
+	)
+}
+
 func SendSingleResponseError(ctx *gin.Context,code int, errorMessage string) {
 	ctx.AbortWithStatusJSON(code,&Status{
 		Code: code,
