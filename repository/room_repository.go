@@ -8,32 +8,32 @@ import (
 	"go-roomify/utils/query"
 )
 
-type RoomRepository interface{
-	CreateRoom( roomModel model.Room ) error
-	GetRoomIdIfExist( name string, roomtype string ) ( string, error )
-	GetAllRoom(page int, size int) ( []any, dto.Paging, error )
-	GetRoomByIdOrName( idOrNameRoom string ) ( []model.Room, error )
-	UpdateRoomById( updateRoom model.Room ) ( model.Room, error )
-	DeleteRoomById( roomId string ) error 
+type RoomRepository interface {
+	CreateRoom(roomModel model.Room) error
+	GetRoomIdIfExist(name string, roomtype string) (string, error)
+	GetAllRoom(page int, size int) ([]any, dto.Paging, error)
+	GetRoomByIdOrName(idOrNameRoom string) ([]model.Room, error)
+	UpdateRoomById(updateRoom model.Room) (model.Room, error)
+	DeleteRoomById(roomId string) error
 }
 
-type roomRepository struct{
+type roomRepository struct {
 	db *sql.DB
 }
 
-func ( rr *roomRepository ) CreateRoom( roomModel model.Room ) error {
+func (rr *roomRepository) CreateRoom(roomModel model.Room) error {
 
-	query := query.QInsert{ DB: rr.db }
+	query := query.QInsert{DB: rr.db}
 
-	_, err := query.Table( 
+	_, err := query.Table(
 		"mst_room",
-	).Column( 
-		"id", 
-		"name", 
-		"roomtype", 
+	).Column(
+		"id",
+		"name",
+		"roomtype",
 		"capacity",
 		"is_available",
-	).Values( 
+	).Values(
 		roomModel.Id,
 		roomModel.Name,
 		roomModel.RoomType,
@@ -44,18 +44,18 @@ func ( rr *roomRepository ) CreateRoom( roomModel model.Room ) error {
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
-func ( rr *roomRepository ) GetRoomIdIfExist( name string, roomtype string ) ( string, error ){
+func (rr *roomRepository) GetRoomIdIfExist(name string, roomtype string) (string, error) {
 
-	query := query.QSelect{ DB: rr.db }
+	query := query.QSelect{DB: rr.db}
 	var idRoom string
 
-	err := query.Table( 
+	err := query.Table(
 		"mst_room",
-	).Column( 
+	).Column(
 		"id",
 	).Where(
 		"name",
@@ -65,30 +65,30 @@ func ( rr *roomRepository ) GetRoomIdIfExist( name string, roomtype string ) ( s
 		"roomtype",
 		"=",
 		roomtype,
-	).RunRow().Scan( &idRoom )
+	).RunRow().Scan(&idRoom)
 
 	if err != nil {
 		return "", nil
 	}
-	
+
 	return idRoom, nil
 }
 
-func ( rr *roomRepository ) GetAllRoom(page int, size int) ( []any, dto.Paging, error ){
+func (rr *roomRepository) GetAllRoom(page int, size int) ([]any, dto.Paging, error) {
 
-	
-	skip := ( page - 1 ) * size
+	skip := (page - 1) * size
 	var allRoom []any
-	queryAllRoom := query.QSelect{ DB: rr.db }
+	queryAllRoom := query.QSelect{DB: rr.db}
 
 	rows, err := queryAllRoom.Table(
 		"mst_room",
 	).Column(
-		"id", 
-		"name", 
-		"roomtype", 
+		"id",
+		"name",
+		"roomtype",
 		"capacity",
 		"is_available",
+		"is_reserveable",
 	).Limit(
 		size,
 	).Offset(
@@ -107,8 +107,9 @@ func ( rr *roomRepository ) GetAllRoom(page int, size int) ( []any, dto.Paging, 
 			&dummyRoom.RoomType,
 			&dummyRoom.Capacity,
 			&dummyRoom.IsAvailable,
+			&dummyRoom.IsReserveable,
 		)
-		
+
 		if err != nil {
 			return nil, dto.Paging{}, err
 		}
@@ -117,12 +118,12 @@ func ( rr *roomRepository ) GetAllRoom(page int, size int) ( []any, dto.Paging, 
 	}
 
 	var totalRows int
-	queryCount := query.QSelect{ DB: rr.db }
+	queryCount := query.QSelect{DB: rr.db}
 	err = queryCount.Table(
 		"mst_room",
 	).Column(
 		"COUNT(id)",
-	).RunRow().Scan( &totalRows )
+	).RunRow().Scan(&totalRows)
 
 	if err != nil {
 		return nil, dto.Paging{}, err
@@ -133,14 +134,14 @@ func ( rr *roomRepository ) GetAllRoom(page int, size int) ( []any, dto.Paging, 
 
 }
 
-func ( rr *roomRepository ) GetRoomByIdOrName( roomidOrName string ) ( []model.Room, error ){
+func (rr *roomRepository) GetRoomByIdOrName(roomidOrName string) ([]model.Room, error) {
 
-	query := query.QSelect{ DB: rr.db }
+	query := query.QSelect{DB: rr.db}
 	var findRoom []model.Room
 
-	rows, err := query.Table( 
+	rows, err := query.Table(
 		"mst_room",
-	).Column( 
+	).Column(
 		"id",
 		"name",
 		"roomtype",
@@ -169,20 +170,20 @@ func ( rr *roomRepository ) GetRoomByIdOrName( roomidOrName string ) ( []model.R
 			&dummyRoom.Capacity,
 			&dummyRoom.IsAvailable,
 		)
-		
+
 		if err != nil {
 			return nil, err
 		}
 
 		findRoom = append(findRoom, dummyRoom)
 	}
-	
+
 	return findRoom, nil
 }
 
-func ( rr *roomRepository ) UpdateRoomById( updateRoom model.Room ) ( model.Room, error ){
+func (rr *roomRepository) UpdateRoomById(updateRoom model.Room) (model.Room, error) {
 
-	query := query.QUpdate{ DB: rr.db }
+	query := query.QUpdate{DB: rr.db}
 
 	_, err := query.Table(
 		"mst_room",
@@ -211,9 +212,9 @@ func ( rr *roomRepository ) UpdateRoomById( updateRoom model.Room ) ( model.Room
 	return updateRoom, nil
 }
 
-func ( rr *roomRepository ) DeleteRoomById( roomId string ) error {
+func (rr *roomRepository) DeleteRoomById(roomId string) error {
 
-	query := query.QDelete{ DB: rr.db }
+	query := query.QDelete{DB: rr.db}
 
 	_, err := query.Table(
 		"mst_room",
@@ -231,7 +232,7 @@ func ( rr *roomRepository ) DeleteRoomById( roomId string ) error {
 
 }
 
-func NewRoomRepository( db *sql.DB ) RoomRepository{
+func NewRoomRepository(db *sql.DB) RoomRepository {
 	return &roomRepository{
 		db: db,
 	}
