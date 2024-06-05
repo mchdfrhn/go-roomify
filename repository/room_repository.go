@@ -127,18 +127,25 @@ func (rr *roomRepository) GetAllRoom(page int, size int) ([]any, dto.Paging, err
 			return nil, dto.Paging{}, err
 		}
 
-		if currentRoom.Id != roomResponse.Room.Id {
-			if roomResponse.Room.Id != "" {
+		if currentRoom.Id != roomResponse.Id {
+			if roomResponse.Id != "" {
 				responseData = append(responseData, roomResponse)
 			}
 
-			roomResponse = response.RoomResponse{Room: currentRoom}
+			roomResponse = response.RoomResponse{
+				Id: currentRoom.Id,
+				Name: currentRoom.Name,
+				RoomType: currentRoom.RoomType,
+				Capacity: currentRoom.Capacity,
+				IsAvailable: currentRoom.IsAvailable,
+				IsReserveable: currentRoom.IsReserveable,
+			}
 		}
 
 		roomResponse.Facilities = append(roomResponse.Facilities, currentFacility)
 	}
 
-	if roomResponse.Room.Id != "" {
+	if roomResponse.Id != "" {
 		responseData = append(responseData, roomResponse)
 	}
 
@@ -301,18 +308,25 @@ func (rr *roomRepository) GetAvailableRoom() ([]response.RoomResponse, error) {
 			return nil, err
 		}
 
-		if currentRoom.Id != roomResponse.Room.Id {
-			if roomResponse.Room.Id != "" {
+		if currentRoom.Id != roomResponse.Id {
+			if roomResponse.Id != "" {
 				responseData = append(responseData, roomResponse)
 			}
 
-			roomResponse = response.RoomResponse{Room: currentRoom}
+			roomResponse = response.RoomResponse{
+				Id: currentRoom.Id,
+				Name: currentRoom.Name,
+				RoomType: currentRoom.RoomType,
+				Capacity: currentRoom.Capacity,
+				IsAvailable: currentRoom.IsAvailable,
+				IsReserveable: currentRoom.IsReserveable,
+			}
 		}
 
 		roomResponse.Facilities = append(roomResponse.Facilities, currentFacility)
 	}
 
-	if roomResponse.Room.Id != "" {
+	if roomResponse.Id != "" {
 		responseData = append(responseData, roomResponse)
 	}
 
