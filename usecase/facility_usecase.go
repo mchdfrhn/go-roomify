@@ -9,7 +9,6 @@ import (
 type FacilityUsecase interface {
 	FindAllPagingFacility(page int, size int) ([]model.Facility, dto.Paging, error)
 	FindFacilityById(id string) (model.Facility, error)
-	FindAllFacility() ([]model.Facility, error)
 	InputFacility(newFacility model.Facility) error
 	UpdatedFacility(newFacility model.Facility) error
 	DeletedFacility(id string) error
@@ -31,10 +30,6 @@ func (fu *facilityUsecase) FindAllPagingFacility(page int, size int) ([]model.Fa
 
 func (fu *facilityUsecase) FindFacilityById(id string) (model.Facility, error) {
 	return fu.repo.GetFacilityById(id)
-}
-
-func (fu *facilityUsecase) FindAllFacility() ([]model.Facility, error) {
-	return fu.repo.GetListFacility()
 }
 
 func (fu *facilityUsecase) InputFacility(newFacility model.Facility) error {
