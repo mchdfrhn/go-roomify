@@ -208,6 +208,12 @@ func (rc *roomController) Route() {
 		utils.USER_ROLE_ADMIN, utils.USER_ROLE_GA), rc.updateRoomByIdIsAvailableHandler)
 	group.DELETE("/:id", rc.authMiddleware.RequireToken(
 		utils.USER_ROLE_ADMIN), rc.deleteRoomByIdHandler)
+	group.GET("/available",
+		rc.authMiddleware.RequireToken(
+			utils.USER_ROLE_ADMIN,
+			utils.USER_ROLE_GA,
+			utils.USER_ROLE_EMPLOYEE),
+		rc.GetRoomAvailableHandler)
 }
 
 func NewRoomController(ru usecase.RoomUsecase, rg *gin.Engine, auth_middleware middleware.AuthMiddleware) *roomController {
@@ -216,4 +222,6 @@ func NewRoomController(ru usecase.RoomUsecase, rg *gin.Engine, auth_middleware m
 		rg:             &rg.RouterGroup,
 		authMiddleware: auth_middleware,
 	}
+>>>>>>> origin/room
 }
+
