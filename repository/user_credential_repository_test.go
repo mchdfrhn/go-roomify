@@ -25,12 +25,6 @@ var user2 = model.UserCredential{
 	Token:    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoidXNlcjIiLCJleHAiOjE3MTc1MDA1Mzh9.3BGFhKeOQ25zVZMfwktjDALf4s19ZjIEgqu8z0jSj38",
 }
 
-var userReq = request.UserUpdatePasswordRequest{
-	Id:          "4f4334e2-0465-4fd6-bfb5-91683b574945",
-	OldPassword: "oldPassword",
-	NewPassword: "newPassword",
-}
-
 var user3 = model.UserCredential{
 	Id:       "d0b886b2-0389-4fd5-b2c2-63af5abdd1fb",
 	Username: "user3",
@@ -44,6 +38,12 @@ var userJwt = model.UserCredentialJwt{
 	Password: "password1",
 	Role:     "admin",
 	Token:    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoidXNlcjEiLCJleHAiOjE3MTc1MDA1Mzh9.kyBRm7v9FmWFnHDiDAXDCgOJWGuhvLY4G5MWkJYiKs8",
+}
+
+var userReq = request.UserUpdatePasswordRequest{
+	Id:          "4f4334e2-0465-4fd6-bfb5-91683b574945",
+	OldPassword: "oldPassword",
+	NewPassword: "newPassword",
 }
 
 var users = []model.UserCredential{user1, user2, user3}
