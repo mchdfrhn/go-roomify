@@ -2,10 +2,12 @@ package repository
 
 import (
 	"database/sql"
-	"go-roomify/model"
+	"encoding/json"
+	"fmt"
 	"go-roomify/model/dto/request"
 	"go-roomify/model/dto/response"
 	"go-roomify/utils"
+	"go-roomify/utils/validation"
 
 	//"go-roomify/model/dto"
 	//"go-roomify/model/dto/request"
@@ -16,37 +18,70 @@ import (
 )
 
 type ReservationRepository interface {
-	CreateRequest(new_request model.Reservation) (model.Reservation, error)
+	CreateRequest(new_request request.ReservationRequest) error
 	ChangeStatus(reserv_status request.ReservationStatusRequest) error
 	GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, error)
-	GetReservationByYear(startYear string, endYear string) (*sql.Rows, error)
 }
 
 type reservationRepository struct {
 	db *sql.DB
 }
 
-func (self *reservationRepository) CreateRequest(new_request model.Reservation) (model.Reservation, error) {
-	//var r_reservation response.ReservationResponse
+func (self *reservationRepository) CreateRequest(new_request request.ReservationRequest) error {
+	// // [verif] Cek apakah ruangan sudah dipesan atau belum
+	// // Sesuai dengan
+	// qselect := query.QSelect{DB: self.db}
+	// qselect.Table("mst_room")
+	// qselect.Column("COUNT(*)")
+	// qselect.Where("id", "=", new_request.RoomId)
+	// qselect.AndWhere("is_available", "=", true)
+	// qselect.AndWhere("is_reserveable", "=", true)
 
-	// [verif] Cek apakah ruangan sudah dipesan atau belum
-	// Sesuai dengan
-	qselect := query.QSelect{DB: self.db}
-	qselect.Table("mst_room")
-	qselect.Column("COUNT(*)")
-	qselect.Where("id", "=", new_request.Detail.RoomId)
-	qselect.AndWhere("is_available", "=", false)
+	// var is_room_available int
+	// err := qselect.RunRow().Scan(&is_room_available)
 
-	var is_room_booked int
-	err := qselect.RunRow().Scan(&is_room_booked)
+	// if err != nil {
+	// 	return err
+	// }
+	// if is_room_available != 1 {
+	// 	return errors.New("Room Not Available Or Not Reserveable")
+	// }
 
-	if err != nil {
-		return model.Reservation{}, err
-	}
+	// // Cek Additional Facility
+	// //
+	// // additional_facility = []string{"1" ,"2", "3"}
 
-	if is_room_booked > 0 {
-		return model.Reservation{}, errors.New("Invalid Room")
-	}
+	// qselect = query.QSelect{DB: self.db}
+	// qselect.Table("mst_facility")
+	// qselect.Column("id", "name", "room_id", "is_available", "is_reserveable")
+	// qselect.Where("", "", false)
+
+	// for _, facility_id := range new_request.Detail.AdditionalFacilityId {
+	// 	qselect.OrWhere("id", "=", facility_id)
+	// }
+
+	// var rows_facility []model.Facility
+
+	// rows, err := qselect.Run()
+
+	// for rows.Next() {
+	// 	var r_facility model.Facility
+	// 	err := rows.Scan(
+	// 		&r_facility.Id,
+	// 		&r_facility.Name,
+	// 		&r_facility.RoomId,
+	// 		&r_facility.IsAvailable,
+	// 		&r_facility.IsReserveable,
+	// 	)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+
+	// 	if !r_facility.IsAvailable || !r_facility.IsReserveable {
+	// 		return errors.New("Facility Not Available or Not Reserveable")
+	// 	}
+	// 	rows_facility = append(rows_facility, r_facility)
+	// }
 
 	// Insert Reservation
 	qinsert := query.QInsert{DB: self.db}
@@ -59,53 +94,56 @@ func (self *reservationRepository) CreateRequest(new_request model.Reservation) 
 		"start_time",
 		"end_time",
 		"reservation_status_id",
-		"description")
+		"room_id",
+		"request_message")
 	qinsert.Values(
 		new_request.Id,
 		new_request.UserProfileId,
 		new_request.ReservationDate,
 		new_request.StartDate,
 		new_request.EndDate,
-		new_request.Status.Id,
-		new_request.Description)
+		new_request.StatusId,
+		new_request.RoomId,
+		new_request.RequestMessage)
 
 	result, err := qinsert.Run()
 
 	if err != nil {
-		return model.Reservation{}, err
+		return err
 	}
 
 	if a, _ := result.RowsAffected(); a == 0 {
-		return model.Reservation{}, errors.New("Failed to make a request, no rows affected")
+		return errors.New("Failed to make a request, no rows affected")
 	}
 
 	// Insert Reservation Detail
 	qinsert = query.QInsert{DB: self.db}
-	req_detail := new_request.Detail
+	//req_detail := new_request.Detail
 
 	qinsert.Table("tx_reservation_detail")
 	qinsert.Column(
 		"id",
 		"reservation_id",
-		"room_id",
-		"equipment_needed")
-	qinsert.Values(
-		req_detail.Id,
-		new_request.Id,
-		req_detail.RoomId,
-		req_detail.Equipment)
+		"facility_id")
+
+	for _, additional_facility := range new_request.AdditionalFacility {
+		qinsert.Values(
+			additional_facility.Id,
+			new_request.Id,
+			additional_facility.FacilityId)
+	}
 
 	result, err = qinsert.Run()
 
 	if err != nil {
-		return model.Reservation{}, err
+		return err
 	}
 
 	if a, _ := result.RowsAffected(); a == 0 {
-		return model.Reservation{}, errors.New("Failed to make a request, no rows affected")
+		return errors.New("Failed to make a request, no rows affected")
 	}
 
-	return new_request, nil
+	return nil
 }
 
 func (self *reservationRepository) ChangeStatus(reserv_status request.ReservationStatusRequest) error {
@@ -160,34 +198,6 @@ func (self *reservationRepository) ChangeStatus(reserv_status request.Reservatio
 }
 
 func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, error) {
-	qselect := query.QSelect{DB: self.db}
-
-	qselect.Table("tx_reservation AS rv")
-	qselect.Column(
-		"rv.id",
-		"rv.user_profile_id",
-		"rv.reservation_date",
-		"rv.start_time",
-		"rv.end_time",
-		"rv.description",
-
-		"rvs.id AS status_id",
-		"rvs.name AS status_name",
-
-		"rvd.id",
-		"rvd.reservation_id",
-		"rvd.equipment_needed",
-
-		"room.id",
-		"room.name",
-		"room.roomtype",
-		"room.capacity",
-		"room.is_available")
-	qselect.Join("tx_reservation_status AS rvs", "rv.reservation_status_id = rvs.id")
-	qselect.Join("tx_reservation_detail AS rvd", "rv.id = rvd.reservation_id")
-	qselect.Join("mst_room AS room", "rvd.room_id = room.id")
-	qselect.Join("mst_facility AS fc", "fc.room_id = room.id")
-
 	filter_status := fl_reserv_get_list.FilterStatus
 	filter_start_date := fl_reserv_get_list.FilterStartDate
 	filter_end_date := fl_reserv_get_list.FilterEndDate
@@ -196,129 +206,128 @@ func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.Res
 	user_id := fl_reserv_get_list.UserId
 	user_role := fl_reserv_get_list.UserRole
 
-	qselect.Where("", "", true)
-
+	// Query SQL
+	var querySQL = `
+	SELECT JSON_AGG(reservation_info) AS all_reservations
+	FROM (
+		SELECT JSON_BUILD_OBJECT(
+			'id', tx_reservation.id,
+			'user_profile', (
+				SELECT JSON_BUILD_OBJECT(
+					'id', mst_user_profile.id,
+					'full_name', mst_user_profile.full_name,
+					'division', mst_division.name,
+					'role', mst_role.position,
+					'address', mst_user_profile.address,
+					'phone_number', mst_user_profile.phone_number
+				)
+				FROM mst_user_profile
+				LEFT JOIN mst_division ON mst_user_profile.division_id = mst_division.id
+				LEFT JOIN mst_role ON mst_user_profile.role_id = mst_role.id
+				WHERE mst_user_profile.id = tx_reservation.user_profile_id
+			),
+			'reservation_date', tx_reservation.reservation_date,
+			'start_time', tx_reservation.start_time,
+			'end_time', tx_reservation.end_time,
+			'reservation_status', (
+				SELECT JSON_BUILD_OBJECT(
+					'id', tx_reservation_status.id,
+					'name', tx_reservation_status.name
+				)
+				FROM tx_reservation_status
+				WHERE tx_reservation_status.id = tx_reservation.reservation_status_id
+			),
+			'room', (
+				SELECT JSON_BUILD_OBJECT(
+					'id', mst_room.id,
+					'name', mst_room.name,
+					'roomtype', mst_room.roomtype,
+					'capacity', mst_room.capacity,
+					'is_available', mst_room.is_available,
+					'is_reserveable', mst_room.is_reserveable,
+					'facility', (
+						SELECT COALESCE(
+							JSON_AGG(
+								JSON_BUILD_OBJECT(
+									'id', mst_facility.id,
+									'name', mst_facility.name,
+									'is_available', mst_facility.is_available,
+									'is_reserveable', mst_facility.is_reserveable
+								)
+							), '[]'::JSON
+						)
+						FROM mst_facility
+						WHERE mst_facility.room_id = mst_room.id
+					)
+				)
+				FROM mst_room
+				WHERE mst_room.id = tx_reservation.room_id
+			),
+			'request_message', tx_reservation.request_message,
+			'response_message', tx_reservation.response_message,
+			'additional_facility', (
+				SELECT COALESCE(
+					JSON_AGG(
+						JSON_BUILD_OBJECT(
+							'id', mst_facility.id,
+							'name', mst_facility.name,
+							'is_available', mst_facility.is_available,
+							'is_reserveable', mst_facility.is_reserveable
+						)
+					), '[]'::JSON
+				)
+				FROM tx_reservation_detail
+				LEFT JOIN mst_facility ON tx_reservation_detail.facility_id = mst_facility.id
+				WHERE tx_reservation_detail.reservation_id = tx_reservation.id
+			)
+		) AS reservation_info
+		FROM tx_reservation
+		LEFT JOIN tx_reservation_status ON tx_reservation_status.id = tx_reservation.reservation_status_id
+		LEFT JOIN mst_room ON mst_room.id = tx_reservation.room_id
+		WHERE true `
 	if user_role == "employee" {
-		qselect.AndWhere("rv.user_profile_id", "=", user_id)
+		querySQL += "AND tx_reservation.user_profile_id = " + validation.EscapeString(user_id)
 	}
 
 	if resrv_id != "" {
-		qselect.AndWhere("rv.id", "=", resrv_id)
+		querySQL += "AND tx_reservation.id = " + validation.EscapeString(resrv_id)
 	} else {
 		if filter_status != "" {
-			qselect.AndWhere("rvs.id", "=", filter_status)
+			querySQL += "AND tx_reservation_status.id = " + validation.EscapeString(filter_status)
 		}
 		if filter_start_date != "" {
-			qselect.AndWhere("rv.reservation_date", ">=", filter_start_date)
+			querySQL += "AND tx_reservation.reservation_date >= " + validation.EscapeString(filter_start_date)
 		}
 		if filter_end_date != "" {
-			qselect.AndWhere("rv.reservation_date", "<=", filter_end_date)
+			querySQL += "AND tx_reservation.reservation_date <= " + validation.EscapeString(filter_end_date)
 		}
 		if filter_room_id != "" {
-			qselect.AndWhere("room.id", "=", filter_room_id)
+			querySQL += "AND mst_room.id = " + validation.EscapeString(filter_room_id)
 		}
 	}
+	querySQL += `
+	) AS all_reservations`
 
-	rows, err := qselect.Run()
-
-	if err != nil {
-		return nil, err
-	}
-
+	var bjson_reserv []byte
 	var rows_reserv_response []response.ReservationResponse
 
-	for rows.Next() {
-		var r_reserv_resp response.ReservationResponse
-
-		err := rows.Scan(
-			&r_reserv_resp.Id,
-			&r_reserv_resp.UserProfileId,
-			&r_reserv_resp.ReservationDate,
-			&r_reserv_resp.StartDate,
-			&r_reserv_resp.EndDate,
-			&r_reserv_resp.Description,
-			&r_reserv_resp.Status.Id,
-			&r_reserv_resp.Status.Name,
-			&r_reserv_resp.Detail.Id,
-			&r_reserv_resp.Detail.ReservationId,
-			&r_reserv_resp.Detail.Equipment,
-			&r_reserv_resp.Detail.Room.Id,
-			&r_reserv_resp.Detail.Room.Name,
-			&r_reserv_resp.Detail.Room.RoomType,
-			&r_reserv_resp.Detail.Room.Capacity,
-			&r_reserv_resp.Detail.Room.IsAvailable)
-
-		if err != nil {
-			return nil, err
-		}
-
-		rows_reserv_response = append(rows_reserv_response, r_reserv_resp)
-	}
-
-	rows.Close()
-
-	return rows_reserv_response, nil
-}
-
-func (self *reservationRepository) GetReservationByYear(startYear string, endYear string) (*sql.Rows, error) {
-
-	query := query.QSelect{DB: self.db}
-
-	rows, err := query.Table(
-		"tx_reservation AS tr",
-	).Column(
-		"*",
-	).Join(
-		"mst_user_profile AS up",
-		"up.id = tr.user_profile_id",
-	).Join(
-		"mst_division AS div",
-		"div.id = up.division_id",
-	).Join(
-		"mst_role AS role",
-		"role.id = up.role_id",
-	).Join(
-		"tx_reservation_detail AS trd",
-		"trd.reservation_id = tr.id",
-	).Join(
-		"mst_room AS r",
-		"r.id = trd.room_id",
-	).Join(
-		"mst_facility AS f",
-		"f.room_id = r.id",
-	).Join(
-		"tx_reservation_status AS trs",
-		"trs.id = tr.reservation_status_id",
-	).Where(
-		"reservation_date",
-		">=",
-		startYear,
-	).AndWhere(
-		"reservation_date",
-		"<=",
-		endYear,
-	).Run()
-
-	// rows, err := query.Table(
-	// 	"t_tes",
-	// ).Column(
-	// 	"*",
-	// ).Where(
-	// 	"date",
-	// 	">=",
-	// 	startYear,
-	// ).AndWhere(
-	// 	"date",
-	// 	"<=",
-	// 	endYear,
-	// ).Run()
+	err := self.db.QueryRow(querySQL).Scan(&bjson_reserv)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return rows, nil
+	if len(bjson_reserv) == 0 {
+		return rows_reserv_response, nil
+	}
 
+	err = json.Unmarshal(bjson_reserv, &rows_reserv_response)
+
+	if err != nil {
+		return nil, errors.New(fmt.Sprint("Error unmarshaling JSON:", err))
+	}
+
+	return rows_reserv_response, nil
 }
 
 func NewReservationRepository(db *sql.DB) ReservationRepository {

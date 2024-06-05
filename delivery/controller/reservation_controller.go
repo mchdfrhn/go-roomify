@@ -3,7 +3,6 @@ package controller
 import (
 	"fmt"
 	"go-roomify/middleware"
-	"go-roomify/model"
 	"go-roomify/model/dto/request"
 	"go-roomify/model/dto/response"
 	"go-roomify/usecase"
@@ -23,7 +22,7 @@ type ReservationController struct {
 }
 
 func (self *ReservationController) createNewHandler(ctx *gin.Context) {
-	var new_reservation model.Reservation
+	var new_reservation request.ReservationRequest
 
 	if err := ctx.ShouldBindJSON(&new_reservation); err != nil {
 		response.SendSingleResponseError(ctx, http.StatusBadRequest, err.Error())
