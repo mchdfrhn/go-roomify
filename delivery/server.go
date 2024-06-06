@@ -19,6 +19,7 @@ type Server struct {
 	// transactionUc usecase.TransactionUsecase
 	// userUc usecase.UserUsecase
 	roomUc     usecase.RoomUsecase
+	roomTypeUc usecase.RoomTypeUsecase
 	facilityUc usecase.FacilityUsecase
 
 	userUc           usecase.UserProfileUsecase
@@ -81,8 +82,13 @@ func NewServer() *Server {
 	// serviceRepo := repository.NewServiceRepository(db.Conn())
 	// serivceUc := usecase.NewServiceUsecase(serviceRepo)
 
+	// ------- ROOM ------
+
 	roomRepo := repository.NewRoomRepository(db.Conn())
 	roomUc := usecase.NewRoomUsecase(roomRepo)
+
+	roomTypeRepo := repository.NewRoomTypeRepository(db.Conn())
+	roomTypeUc := usecase.NewRoomTypeUsecase(roomTypeRepo)
 
 	facilityRepo := repository.NewFacilityRepository(db.Conn())
 	facilityUc := usecase.NewFacilityUsecase(facilityRepo)
@@ -128,6 +134,8 @@ func NewServer() *Server {
 
 		reservationUc: resevationUc,
 		reportUc:      reportUc,
+
+		roomTypeUc: roomTypeUc,
 
 		engine:      engine,
 		routerGroup: router_group,
