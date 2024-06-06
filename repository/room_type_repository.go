@@ -24,11 +24,9 @@ func (rr *roomTypeRepository) CreateRoomType(roomModelType model.RoomType) error
 	_, err := query.Table(
 		"room_type",
 	).Column(
-		"id",
-		"name",
+		"id", "name",
 	).Values(
-		roomModelType.Id,
-		roomModelType.Name,
+		roomModelType.Id, roomModelType.Name,
 	).Run()
 
 	if err != nil {
@@ -40,12 +38,13 @@ func (rr *roomTypeRepository) CreateRoomType(roomModelType model.RoomType) error
 
 func (rr *roomTypeRepository) GetAllRoomType() ([]model.RoomType, error) {
 	queryAllRoom := query.QSelect{DB: rr.db}
+
 	rows, err := queryAllRoom.Table(
 		"room_type",
 	).Column(
-		"id",
-		"name",
+		"id", "name",
 	).Run()
+
 	if err != nil {
 		return nil, err
 	}
@@ -55,9 +54,9 @@ func (rr *roomTypeRepository) GetAllRoomType() ([]model.RoomType, error) {
 		var roomType model.RoomType
 
 		err := rows.Scan(
-			&roomType.Id,
-			&roomType.Name,
+			&roomType.Id, &roomType.Name,
 		)
+
 		if err != nil {
 			return nil, err
 		}
@@ -78,17 +77,13 @@ func (rr *roomTypeRepository) GetRoomTypeByIdOrName(roomTypeIdOrName string) (mo
 		"id",
 		"name",
 	).Where(
-		"id",
-		"=",
-		roomTypeIdOrName,
+		"id", "=", roomTypeIdOrName,
 	).OrWhere(
-		"name",
-		"=",
-		roomTypeIdOrName,
+		"name", "=", roomTypeIdOrName,
 	).RunRow().Scan(
-		&roomType.Id,
-		&roomType.Name,
+		&roomType.Id, &roomType.Name,
 	)
+
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return model.RoomType{}, nil
@@ -105,12 +100,9 @@ func (rr *roomTypeRepository) UpdateRoomTypeById(updateRoomType model.RoomType) 
 	_, err := query.Table(
 		"room_type",
 	).Set(
-		"name",
-		updateRoomType.Name,
+		"name", updateRoomType.Name,
 	).Where(
-		"id",
-		"=",
-		updateRoomType.Id,
+		"id", "=", updateRoomType.Id,
 	).Run()
 
 	if err != nil {
@@ -126,11 +118,9 @@ func (rr *roomTypeRepository) DeleteRoomTypeById(roomId string) error {
 	_, err := query.Table(
 		"room_type",
 	).Where(
-		"id",
-		"=",
-		roomId,
+		"id", "=", roomId,
 	).Run()
-
+	
 	if err != nil {
 		return err
 	}

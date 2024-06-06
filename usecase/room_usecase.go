@@ -15,16 +15,17 @@ import (
 
 type RoomUsecase interface {
 	CreateRoom(roomRequest request.RoomRequest) (model.Room, int, error)
-	GetAllRoom(paramPage string, paramSize string) ([]any, dto.Paging, int, error)
+	GetAllRoom(paramPage string, paramSize string, paramType string) ([]any, dto.Paging, int, error)
 	GetRoomByIdOrName(idOrNameRoom string) ([]response.RoomResponse, int, error)
 	UpdateRoomById(updateRoomRequest model.Room) (model.Room, int, error)
 	DeleteRooomById(roomId string) (int, error)
 	UpdateRoomByIdIsAvailableOnly(roomId string, isAvailable bool) (model.Room, int, error)
-	GetAvailableRoom() ([]response.RoomResponse, int, error)
+	GetAvailableRoom(paramType string) ([]response.RoomResponse, int, error)
 }
 
 type roomUsecase struct {
 	repo repository.RoomRepository
+	roomTypeUc RoomTypeUsecase
 }
 
 func (ru *roomUsecase) CreateRoom(roomRequest request.RoomRequest) (model.Room, int, error) {
@@ -32,13 +33,18 @@ func (ru *roomUsecase) CreateRoom(roomRequest request.RoomRequest) (model.Room, 
 		return model.Room{}, http.StatusBadRequest, fmt.Errorf("name max 200 char")
 	}
 
-	if len(roomRequest.RoomType) > 200 {
+	if len(roomRequest.RoomTypeId) > 200 {
 		return model.Room{}, http.StatusBadRequest, fmt.Errorf("room type max 200 char")
 	}
 
-	roomId, err := ru.repo.GetRoomIdIfExist(roomRequest.Name, roomRequest.RoomType)
+	_, status, err := ru.roomTypeUc.GetRoomTypeByIdOrName(roomRequest.RoomTypeId)
 	if err != nil {
-		return model.Room{}, http.StatusInternalServerError, err
+		return model.Room{}, status, err
+	}
+
+	roomId, err := ru.repo.GetRoomIdIfExist(roomRequest.Name, roomRequest.RoomTypeId)
+	if err != nil {
+		return model.Room{}, http.StatusInternalServerError, fmt.Errorf("server error")
 	}
 
 	if roomId != "" {
@@ -49,7 +55,7 @@ func (ru *roomUsecase) CreateRoom(roomRequest request.RoomRequest) (model.Room, 
 	roomModel := model.Room{
 		Id:            uuid.NewString(),
 		Name:          roomRequest.Name,
-		RoomType:      roomRequest.RoomType,
+		RoomTypeId:    roomRequest.RoomTypeId,
 		Capacity:      roomRequest.Capacity,
 		IsAvailable:   &isAvailable,
 		IsReserveable: roomRequest.IsReserveable,
@@ -57,32 +63,22 @@ func (ru *roomUsecase) CreateRoom(roomRequest request.RoomRequest) (model.Room, 
 
 	err = ru.repo.CreateRoom(roomModel)
 	if err != nil {
-		return model.Room{}, http.StatusInternalServerError, err
+		return model.Room{}, http.StatusInternalServerError, fmt.Errorf("server error")
 	}
 
 	return roomModel, http.StatusCreated, nil
 }
 
-func (ru *roomUsecase) GetAllRoom(paramPage string, paramSize string) ([]any, dto.Paging, int, error) {
+func (ru *roomUsecase) GetAllRoom(paramPage string, paramSize string, paramType string) ([]any, dto.Paging, int, error) {
 	page := 1
 	size := 10
 
 	if paramPage != "" {
-		castingPage, err := strconv.Atoi(paramPage)
-		if err != nil {
-			return nil, dto.Paging{}, http.StatusBadRequest, err
-		}
-
-		page = castingPage
+		page, _ = strconv.Atoi(paramPage)
 	}
 
 	if paramSize != "" {
-		castingSize, err := strconv.Atoi(paramSize)
-		if err != nil {
-			return nil, dto.Paging{}, http.StatusBadRequest, err
-		}
-
-		size = castingSize
+		size, _ = strconv.Atoi(paramSize)
 	}
 
 	if page <= 0 || size <= 0 {
@@ -90,9 +86,9 @@ func (ru *roomUsecase) GetAllRoom(paramPage string, paramSize string) ([]any, dt
 	}
 
 	skip := (page - 1) * size
-	allRoom, paging, err := ru.repo.GetAllRoom(page, skip, size)
+	allRoom, paging, err := ru.repo.GetAllRoom(page, skip, size, paramType)
 	if err != nil {
-		return nil, dto.Paging{}, http.StatusInternalServerError, err
+		return nil, dto.Paging{}, http.StatusInternalServerError, fmt.Errorf("server error")
 	}
 
 	var castingAllRoom []any
@@ -103,7 +99,7 @@ func (ru *roomUsecase) GetAllRoom(paramPage string, paramSize string) ([]any, dt
 func (ru *roomUsecase) GetRoomByIdOrName(roomIdOrName string) ([]response.RoomResponse, int, error) {
 	findRoom, err := ru.repo.GetRoomByIdOrName(roomIdOrName)
 	if err != nil {
-		return nil, http.StatusInternalServerError, err
+		return nil, http.StatusInternalServerError, fmt.Errorf("server error")
 	}
 
 	if len(findRoom) == 0 {
@@ -118,18 +114,40 @@ func (ru *roomUsecase) UpdateRoomById(updateRoom model.Room) (model.Room, int, e
 		return model.Room{}, http.StatusBadRequest, fmt.Errorf("name max 200 char")
 	}
 
-	if len(updateRoom.RoomType) > 200 {
+	if len(updateRoom.RoomTypeId) > 200 {
 		return model.Room{}, http.StatusBadRequest, fmt.Errorf("room type max 200 char")
 	}
 
-	_, status, err := ru.GetRoomByIdOrName(updateRoom.Id)
+	findRoom, status, err := ru.GetRoomByIdOrName(updateRoom.Id)
 	if err != nil {
 		return model.Room{}, status, err
 	}
 
+	if len(findRoom) > 1 {
+		return model.Room{}, http.StatusBadRequest, fmt.Errorf("by id not by name")
+	}
+
+	if findRoom[0].Id == updateRoom.Id &&
+		findRoom[0].Name == updateRoom.Name &&
+		findRoom[0].Capacity == updateRoom.Capacity &&
+		findRoom[0].IsAvailable == *updateRoom.IsAvailable &&
+		findRoom[0].IsReserveable == *updateRoom.IsReserveable {
+		
+		return model.Room{}, http.StatusBadRequest, fmt.Errorf("no changes detected")
+	}
+
+	findIdSameRoomAndType, err := ru.repo.GetRoomIdIfExist(updateRoom.Name, updateRoom.RoomTypeId)
+	if err != nil {
+		return model.Room{}, http.StatusInternalServerError, fmt.Errorf("server error")
+	}
+
+	if findIdSameRoomAndType != updateRoom.Id {
+		return model.Room{}, http.StatusConflict, fmt.Errorf("a room with the same name and type already exists")
+	}
+
 	updatedRoom, err := ru.repo.UpdateRoomById(updateRoom)
 	if err != nil {
-		return model.Room{}, http.StatusInternalServerError, err
+		return model.Room{}, http.StatusInternalServerError, fmt.Errorf("server error")
 	}
 
 	return updatedRoom, http.StatusOK, nil
@@ -143,7 +161,7 @@ func (ru *roomUsecase) DeleteRooomById(roomId string) (int, error) {
 
 	err = ru.repo.DeleteRoomById(roomId)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return http.StatusInternalServerError, fmt.Errorf("server error")
 	}
 
 	return http.StatusOK, nil
@@ -174,8 +192,8 @@ func (ru *roomUsecase) UpdateRoomByIdIsAvailableOnly(roomId string, isAvailable 
 	return updatedRoom, http.StatusOK, nil
 }
 
-func (ru *roomUsecase) GetAvailableRoom() ([]response.RoomResponse, int, error) {
-	availableRooms, err := ru.repo.GetAvailableRoom()
+func (ru *roomUsecase) GetAvailableRoom(paramType string) ([]response.RoomResponse, int, error) {
+	availableRooms, err := ru.repo.GetAvailableRoom(paramType)
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
@@ -183,8 +201,9 @@ func (ru *roomUsecase) GetAvailableRoom() ([]response.RoomResponse, int, error) 
 	return availableRooms, http.StatusOK, nil
 }
 
-func NewRoomUsecase(repo repository.RoomRepository) RoomUsecase {
+func NewRoomUsecase(repo repository.RoomRepository, roomTypeUc RoomTypeUsecase) RoomUsecase {
 	return &roomUsecase{
 		repo: repo,
+		roomTypeUc: roomTypeUc,
 	}
 }

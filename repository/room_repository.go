@@ -12,12 +12,12 @@ import (
 
 type RoomRepository interface {
 	CreateRoom(roomModel model.Room) error
-	GetRoomIdIfExist(name string, roomtype string) (string, error)
-	GetAllRoom(page int, skip int, size int) ([]response.RoomResponse, dto.Paging, error)
+	GetRoomIdIfExist(name string, roomtypeId string) (string, error)
+	GetAllRoom(page int, skip int, size int, paramType string) ([]response.RoomResponse, dto.Paging, error)
 	GetRoomByIdOrName(idOrNameRoom string) ([]response.RoomResponse, error)
 	UpdateRoomById(updateRoom model.Room) (model.Room, error)
 	DeleteRoomById(roomId string) error
-	GetAvailableRoom() ([]response.RoomResponse, error)
+	GetAvailableRoom(paramType string) ([]response.RoomResponse, error)
 }
 
 type roomRepository struct {
@@ -30,19 +30,10 @@ func (rr *roomRepository) CreateRoom(roomModel model.Room) error {
 	_, err := query.Table(
 		"mst_room",
 	).Column(
-		"id",
-		"name",
-		"roomtype",
-		"capacity",
-		"is_available",
-		"is_reserveable",
+		"id", "name", "room_type_id", "capacity", "is_available", "is_reserveable",
 	).Values(
-		roomModel.Id,
-		roomModel.Name,
-		roomModel.RoomType,
-		roomModel.Capacity,
-		roomModel.IsAvailable,
-		roomModel.IsReserveable,
+		roomModel.Id, roomModel.Name, roomModel.RoomTypeId, roomModel.Capacity,
+		roomModel.IsAvailable, roomModel.IsReserveable,
 	).Run()
 
 	if err != nil {
@@ -52,7 +43,7 @@ func (rr *roomRepository) CreateRoom(roomModel model.Room) error {
 	return nil
 }
 
-func (rr *roomRepository) GetRoomIdIfExist(name string, roomtype string) (string, error) {
+func (rr *roomRepository) GetRoomIdIfExist(name string, roomtypeId string) (string, error) {
 	query := query.QSelect{DB: rr.db}
 	var idRoom string
 
@@ -61,48 +52,68 @@ func (rr *roomRepository) GetRoomIdIfExist(name string, roomtype string) (string
 	).Column(
 		"id",
 	).Where(
-		"name",
-		"=",
-		name,
+		"name", "=", name,
 	).AndWhere(
-		"roomtype",
-		"=",
-		roomtype,
-	).RunRow().Scan(&idRoom)
+		"room_type_id", "=", roomtypeId,
+	).RunRow().Scan(
+		&idRoom,
+	)
 
 	if err != nil {
-		return "", nil
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+		return "", err
 	}
 
 	return idRoom, nil
 }
 
-func (rr *roomRepository) GetAllRoom(page int, skip int, size int) ([]response.RoomResponse, dto.Paging, error) {
+func (rr *roomRepository) GetAllRoom(page int, skip int, size int, paramType string) ([]response.RoomResponse, dto.Paging, error) {
 	queryAllRoom := query.QSelect{DB: rr.db}
 
 	subQueryTable := fmt.Sprintf(`
 		(
-			SELECT * 
-			FROM mst_room 
+			SELECT r.*, res.start_time, res.end_time
+			FROM mst_room AS r
+			LEFT JOIN (
+				SELECT room_id, start_time, end_time
+				FROM tx_reservation
+				ORDER BY start_time DESC
+				LIMIT 1
+			) AS res ON r.id = res.room_id
 			LIMIT %d OFFSET %d
-		) AS r 
+		) AS r
 	`, size, skip)
 
-	rows, err := queryAllRoom.Table(
+	getRoom := queryAllRoom.Table(
 		subQueryTable,
 	).Column(
 		"r.id",
 		"r.name",
-		"r.roomtype",
+		"rt.name AS room_type",
 		"r.capacity",
 		"r.is_available",
+		"COALESCE(r.start_time, '1945-08-17')",
+		"COALESCE(r.end_time, '1945-08-17')",
 		"r.is_reserveable",
 		"COALESCE(f.id, 'null')",
 		"COALESCE(f.name, 'null')",
 		"COALESCE(f.room_id, 'null')",
 	).LeftJoin(
-		"mst_facility AS f",
-		"f.room_id = r.id",
+		"mst_facility AS f", "f.room_id = r.id",
+	).Join(
+		"room_type AS rt", "rt.id = r.room_type_id",
+	)
+
+	if paramType != "" {
+		getRoom.Where(
+			"rt.name", "=", paramType,
+		)
+	}
+
+	rows, err := getRoom.OrderBy(
+		"r.capacity", "ASC",
 	).Run()
 
 	if err != nil {
@@ -138,24 +149,35 @@ func (rr *roomRepository) GetRoomByIdOrName(roomidOrName string) ([]response.Roo
 	).Column(
 		"r.id",
 		"r.name",
-		"r.roomtype",
+		"rt.name AS room_type",
 		"r.capacity",
 		"r.is_available",
+		"COALESCE(res.start_time, '1945-08-17')",
+		"COALESCE(res.end_time, '1945-08-17')",
 		"r.is_reserveable",
 		"COALESCE(f.id, 'null')",
 		"COALESCE(f.name, 'null')",
 		"COALESCE(f.room_id, 'null')",
 	).LeftJoin(
-		"mst_facility AS f",
-		"f.room_id = r.id",
+		"mst_facility AS f", "f.room_id = r.id",
+	).Join(
+		"room_type As rt", "rt.id = r.room_type_id",
+	).LeftJoin(
+		`
+		( 
+			SELECT room_id, start_time, end_time
+			FROM tx_reservation
+			ORDER BY start_time DESC
+			LIMIT 1 
+		) AS res
+		`,
+		"r.id = res.room_id",
 	).Where(
-		"r.id",
-		"=",
-		roomidOrName,
+		"r.id", "=", roomidOrName,
 	).OrWhere(
-		"r.name",
-		"=",
-		roomidOrName,
+		"r.name", "=", roomidOrName,
+	).OrderBy(
+		"r.capacity", "ASC",
 	).Run()
 
 	if err != nil {
@@ -179,8 +201,8 @@ func (rr *roomRepository) UpdateRoomById(updateRoom model.Room) (model.Room, err
 		"name",
 		updateRoom.Name,
 	).Set(
-		"roomtype",
-		updateRoom.RoomType,
+		"room_type_id",
+		updateRoom.RoomTypeId,
 	).Set(
 		"capacity",
 		updateRoom.Capacity,
@@ -191,9 +213,7 @@ func (rr *roomRepository) UpdateRoomById(updateRoom model.Room) (model.Room, err
 		"is_reserveable",
 		updateRoom.IsReserveable,
 	).Where(
-		"id",
-		"=",
-		updateRoom.Id,
+		"id","=", updateRoom.Id,
 	).Run()
 
 	if err != nil {
@@ -209,9 +229,7 @@ func (rr *roomRepository) DeleteRoomById(roomId string) error {
 	_, err := query.Table(
 		"mst_room",
 	).Where(
-		"id",
-		"=",
-		roomId,
+		"id", "=", roomId,
 	).Run()
 
 	if err != nil {
@@ -222,28 +240,49 @@ func (rr *roomRepository) DeleteRoomById(roomId string) error {
 
 }
 
-func (rr *roomRepository) GetAvailableRoom() ([]response.RoomResponse, error) {
+func (rr *roomRepository) GetAvailableRoom(paramType string) ([]response.RoomResponse, error) {
 	query := query.QSelect{DB: rr.db}
 
-	rows, err := query.Table(
+	getRoom := query.Table(
 		"mst_room AS r",
 	).Column(
 		"r.id",
 		"r.name",
-		"r.roomtype",
+		"rt.name AS room_type",
 		"r.capacity",
 		"r.is_available",
+		"COALESCE(res.start_time, '1945-08-17')",
+		"COALESCE(res.end_time, '1945-08-17')",
 		"r.is_reserveable",
 		"COALESCE(f.id, 'null')",
 		"COALESCE(f.name, 'null')",
 		"COALESCE(f.room_id, 'null')",
 	).LeftJoin(
-		"mst_facility AS f",
-		"f.room_id = r.id",
+		"mst_facility AS f", "f.room_id = r.id",
+	).Join(
+		"room_type AS rt", "rt.id = r.room_type_id",
+	).LeftJoin(
+		`
+		( 
+			SELECT room_id, start_time, end_time
+			FROM tx_reservation
+			ORDER BY start_time DESC
+			LIMIT 1 
+		) AS res
+		`,
+		"r.id = res.room_id",
 	).Where(
-		"r.is_available",
-		"=",
-		"true",
+		"r.is_available", "=", true,
+	)
+
+	if paramType != "" {
+		getRoom.AndWhere(
+			"rt.name", "=", paramType,
+		)
+	}
+
+	rows, err := getRoom.OrderBy(
+		"r.capacity", "ASC",
 	).Run()
 
 	if err != nil {
@@ -258,20 +297,24 @@ func (rr *roomRepository) GetAvailableRoom() ([]response.RoomResponse, error) {
 	return responseData, nil
 }
 
-func (rr *roomRepository) scanRoomAndFacility(rows *sql.Rows) ([]response.RoomResponse, error){
+func (rr *roomRepository) scanRoomAndFacility(rows *sql.Rows) ([]response.RoomResponse, error) {
 	var responseData []response.RoomResponse
 	var roomResponse response.RoomResponse
 
 	for rows.Next() {
 		var currentRoom model.Room
 		var currentFacility response.FacilityForRoomResponse
-	
+		var startTime string
+		var endTime string
+
 		err := rows.Scan(
 			&currentRoom.Id,
 			&currentRoom.Name,
-			&currentRoom.RoomType,
+			&currentRoom.RoomTypeId,
 			&currentRoom.Capacity,
 			&currentRoom.IsAvailable,
+			&startTime,
+			&endTime,
 			&currentRoom.IsReserveable,
 			&currentFacility.Id,
 			&currentFacility.Name,
@@ -280,22 +323,29 @@ func (rr *roomRepository) scanRoomAndFacility(rows *sql.Rows) ([]response.RoomRe
 		if err != nil {
 			return nil, err
 		}
-	
+
 		if currentRoom.Id != roomResponse.Id {
 			if roomResponse.Id != "" {
 				responseData = append(responseData, roomResponse)
 			}
-	
+
+			if startTime == "1945-08-17" || *currentRoom.IsAvailable {
+				startTime = ""
+				endTime = ""
+			}
+
 			roomResponse = response.RoomResponse{
 				Id:            currentRoom.Id,
 				Name:          currentRoom.Name,
-				RoomType:      currentRoom.RoomType,
+				RoomType:      currentRoom.RoomTypeId,
 				Capacity:      currentRoom.Capacity,
 				IsAvailable:   *currentRoom.IsAvailable,
 				IsReserveable: *currentRoom.IsReserveable,
+				StartTime:     startTime,
+				EndTIme:       endTime,
 			}
 		}
-	
+
 		if currentFacility.Id != "null" {
 			roomResponse.Facilities = append(roomResponse.Facilities, currentFacility)
 		}
