@@ -103,7 +103,7 @@ func NewServer() *Server {
 
 	// // Transaction
 	resevationRepo := repository.NewReservationRepository(db.Conn())
-	resevationUc := usecase.NewReservationUsecase(resevationRepo)
+	resevationUc := usecase.NewReservationUsecase(resevationRepo, roomRepo, facilityRepo)
 
 	// Report
 	reportRepo := repository.NewReportRepository(db.Conn())

@@ -3,6 +3,8 @@ package usecase
 import (
 	//"errors"
 
+	"errors"
+	"go-roomify/model"
 	"go-roomify/model/dto/request"
 	"go-roomify/model/dto/response"
 	"go-roomify/repository"
@@ -21,10 +23,44 @@ type ReservationUsecase interface {
 }
 
 type reservationUsecase struct {
-	repo repository.ReservationRepository
+	repo          repository.ReservationRepository
+	repo_room     repository.RoomRepository
+	repo_facility repository.FacilityRepository
 }
 
 func (self *reservationUsecase) CreateRequest(new_request request.ReservationRequest) ([]response.ReservationResponse, error) {
+	// Verify Room Availability
+	rows_room, err := self.repo_room.GetRoomByIdOrName(new_request.RoomId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(rows_room) != 1 {
+		return nil, errors.New("Invalid Room Id")
+	}
+
+	row_room := rows_room[1]
+
+	if !row_room.IsAvailable || !row_room.IsReserveable {
+		return nil, errors.New("Room Not Available or Not Reserveable")
+	}
+
+	// Verify Faciliry Availability
+	var rows_facility model.Facility
+
+	for _, detail := range new_request.AdditionalFacility {
+		rows_facility, err = self.repo_facility.GetFacilityById(detail.FacilityId)
+
+		if err != nil {
+			return nil, err
+		}
+
+		if !rows_facility.IsAvailable || !rows_facility.IsReserveable {
+			return nil, errors.New("Facility Not Available or Not Reserveable")
+		}
+	}
+
 	new_request.Id = uuid.NewString()
 	new_request.StatusId = utils.RESERV_STATUS_PENDING
 
@@ -37,7 +73,7 @@ func (self *reservationUsecase) CreateRequest(new_request request.ReservationReq
 		new_request.AdditionalFacility[i].Id = uuid.NewString()
 	}
 
-	err := self.repo.CreateRequest(new_request)
+	err = self.repo.CreateRequest(new_request)
 
 	if err != nil {
 		return nil, err
@@ -58,8 +94,13 @@ func (self *reservationUsecase) GetListByToken(fl_reserv_get_list request.Reserv
 	return self.repo.GetListByToken(fl_reserv_get_list)
 }
 
-func NewReservationUsecase(repo repository.ReservationRepository) ReservationUsecase {
+func NewReservationUsecase(
+	repo repository.ReservationRepository,
+	repo_room repository.RoomRepository,
+	repo_facility repository.FacilityRepository) ReservationUsecase {
 	return &reservationUsecase{
-		repo: repo,
+		repo:          repo,
+		repo_room:     repo_room,
+		repo_facility: repo_facility,
 	}
 }
