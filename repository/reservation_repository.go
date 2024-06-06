@@ -28,61 +28,6 @@ type reservationRepository struct {
 }
 
 func (self *reservationRepository) CreateRequest(new_request request.ReservationRequest) error {
-	// // [verif] Cek apakah ruangan sudah dipesan atau belum
-	// // Sesuai dengan
-	// qselect := query.QSelect{DB: self.db}
-	// qselect.Table("mst_room")
-	// qselect.Column("COUNT(*)")
-	// qselect.Where("id", "=", new_request.RoomId)
-	// qselect.AndWhere("is_available", "=", true)
-	// qselect.AndWhere("is_reserveable", "=", true)
-
-	// var is_room_available int
-	// err := qselect.RunRow().Scan(&is_room_available)
-
-	// if err != nil {
-	// 	return err
-	// }
-	// if is_room_available != 1 {
-	// 	return errors.New("Room Not Available Or Not Reserveable")
-	// }
-
-	// // Cek Additional Facility
-	// //
-	// // additional_facility = []string{"1" ,"2", "3"}
-
-	// qselect = query.QSelect{DB: self.db}
-	// qselect.Table("mst_facility")
-	// qselect.Column("id", "name", "room_id", "is_available", "is_reserveable")
-	// qselect.Where("", "", false)
-
-	// for _, facility_id := range new_request.Detail.AdditionalFacilityId {
-	// 	qselect.OrWhere("id", "=", facility_id)
-	// }
-
-	// var rows_facility []model.Facility
-
-	// rows, err := qselect.Run()
-
-	// for rows.Next() {
-	// 	var r_facility model.Facility
-	// 	err := rows.Scan(
-	// 		&r_facility.Id,
-	// 		&r_facility.Name,
-	// 		&r_facility.RoomId,
-	// 		&r_facility.IsAvailable,
-	// 		&r_facility.IsReserveable,
-	// 	)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-
-	// 	if !r_facility.IsAvailable || !r_facility.IsReserveable {
-	// 		return errors.New("Facility Not Available or Not Reserveable")
-	// 	}
-	// 	rows_facility = append(rows_facility, r_facility)
-	// }
-
 	// Insert Reservation
 	qinsert := query.QInsert{DB: self.db}
 

@@ -2,7 +2,6 @@ package repository
 
 import (
 	"database/sql"
-	"fmt"
 	"go-roomify/model"
 	"go-roomify/model/dto"
 	"go-roomify/utils"
@@ -125,7 +124,6 @@ func (f *facilityRepository) InsertFacility(newFacility model.Facility) error {
 		newFacility.RoomId,
 	)
 
-	fmt.Println(qinsert.GetQuery())
 	_, err := qinsert.Run()
 	if err != nil {
 		return err
@@ -144,7 +142,6 @@ func (f *facilityRepository) UpdateFacility(newFacility model.Facility) error {
 	qupdate.Set("room_id", newFacility.RoomId)
 	qupdate.Where("id", "=", newFacility.Id)
 
-	fmt.Println(qupdate.GetQuery())
 	_, err := qupdate.Run()
 	if err != nil {
 		return err
