@@ -45,13 +45,14 @@ func (ru *roomUsecase) CreateRoom(roomRequest request.RoomRequest) (model.Room, 
 		return model.Room{}, http.StatusConflict, fmt.Errorf("a room with the same name and type already exists")
 	}
 
+	isAvailable := true
 	roomModel := model.Room{
-		Id:          uuid.NewString(),
-		Name:        roomRequest.Name,
-		RoomType:    roomRequest.RoomType,
-		Capacity:    roomRequest.Capacity,
-		IsAvailable: true,
-		IsReserveable: true,
+		Id:            uuid.NewString(),
+		Name:          roomRequest.Name,
+		RoomType:      roomRequest.RoomType,
+		Capacity:      roomRequest.Capacity,
+		IsAvailable:   &isAvailable,
+		IsReserveable: roomRequest.IsReserveable,
 	}
 
 	err = ru.repo.CreateRoom(roomModel)
@@ -159,11 +160,11 @@ func (ru *roomUsecase) UpdateRoomByIdIsAvailableOnly(roomId string, isAvailable 
 	}
 
 	updateRoom := model.Room{
-		Id: findRoom[0].Id,
-		Name: findRoom[0].Name,
-		Capacity: findRoom[0].Capacity,
-		IsAvailable: isAvailable,
-		IsReserveable: findRoom[0].IsReserveable,
+		Id:            findRoom[0].Id,
+		Name:          findRoom[0].Name,
+		Capacity:      findRoom[0].Capacity,
+		IsAvailable:   &isAvailable,
+		IsReserveable: &findRoom[0].IsReserveable,
 	}
 	updatedRoom, status, err := ru.UpdateRoomById(updateRoom)
 	if err != nil {
