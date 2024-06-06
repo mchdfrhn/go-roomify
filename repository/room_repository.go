@@ -291,8 +291,8 @@ func (rr *roomRepository) scanRoomAndFacility(rows *sql.Rows) ([]response.RoomRe
 				Name:          currentRoom.Name,
 				RoomType:      currentRoom.RoomType,
 				Capacity:      currentRoom.Capacity,
-				IsAvailable:   currentRoom.IsAvailable,
-				IsReserveable: currentRoom.IsReserveable,
+				IsAvailable:   *currentRoom.IsAvailable,
+				IsReserveable: *currentRoom.IsReserveable,
 			}
 		}
 	
