@@ -3,7 +3,6 @@ package repository
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"go-roomify/model/dto/request"
 	"go-roomify/model/dto/response"
 	"go-roomify/utils"
@@ -92,11 +91,10 @@ func (self *reservationRepository) CreateRequest(new_request request.Reservation
 }
 
 func (self *reservationRepository) ChangeStatus(reserv_status request.ReservationStatusRequest) error {
-	// SET ROOM TO UNAVAILABLE
+	// // SET ROOM TO UNAVAILABLE
 	qselect := query.QSelect{DB: self.db}
 	qselect.Table("tx_reservation AS rv")
-	qselect.Column("rvd.room_id")
-	qselect.Join("tx_reservation_detail as rvd", "rvd.reservation_id = rv.id")
+	qselect.Column("rv.room_id")
 	qselect.Where("rv.id", "=", reserv_status.ReservationId)
 
 	var room_id string
@@ -105,31 +103,34 @@ func (self *reservationRepository) ChangeStatus(reserv_status request.Reservatio
 		return err
 	}
 
-	qupdate := query.QUpdate{DB: self.db}
-	qupdate.Table("mst_room")
-	qupdate.Set("is_available", false)
-	qupdate.Where("id", "=", room_id)
+	// Update Room Reservation
+	if reserv_status.StatusId == utils.RESERV_STATUS_ACCEPTED {
+		qupdate := query.QUpdate{DB: self.db}
+		qupdate.Table("mst_room")
+		qupdate.Set("is_available", false)
+		qupdate.Where("id", "=", room_id)
 
-	result, err := qupdate.Run()
+		result, err := qupdate.Run()
 
-	if err != nil {
-		return err
-	}
+		if err != nil {
+			return err
+		}
 
-	if a, _ := result.RowsAffected(); a == 0 {
-		return errors.New("Invalid Room Id")
+		if a, _ := result.RowsAffected(); a == 0 {
+			return errors.New("Invalid Room Id")
+		}
 	}
 
 	// Set Transaction Status
-	qupdate = query.QUpdate{DB: self.db}
+	qupdate := query.QUpdate{DB: self.db}
 
 	qupdate.Table("tx_reservation")
 	qupdate.Set("reservation_status_id", reserv_status.StatusId)
-	qupdate.Set("description", reserv_status.Description)
+	qupdate.Set("response_message", reserv_status.ResponseMessage)
 	qupdate.Where("id", "=", reserv_status.ReservationId)
 	qupdate.AndWhere("reservation_status_id", "=", utils.RESERV_STATUS_PENDING)
 
-	result, err = qupdate.Run()
+	result, err := qupdate.Run()
 
 	if err != nil {
 		return err
@@ -218,7 +219,8 @@ func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.Res
 							'id', mst_facility.id,
 							'name', mst_facility.name,
 							'is_available', mst_facility.is_available,
-							'is_reserveable', mst_facility.is_reserveable
+							'is_reserveable', mst_facility.is_reserveable,
+							'room_id', mst_facility.room_id
 						)
 					), '[]'::JSON
 				)
@@ -270,7 +272,7 @@ func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.Res
 	err = json.Unmarshal(bjson_reserv, &rows_reserv_response)
 
 	if err != nil {
-		return nil, errors.New(fmt.Sprint("Error unmarshaling JSON:", err))
+		return nil, errors.New("Error unmarshaling JSON")
 	}
 
 	return rows_reserv_response, nil

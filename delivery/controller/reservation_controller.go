@@ -57,23 +57,23 @@ func (self *ReservationController) statusHandler(ctx *gin.Context) {
 	user_role := jwt_claims["role"]
 
 	if user_role == "employee" && new_reserv_status.StatusId != utils.RESERV_STATUS_CANCEL {
-		response.SendSingleResponseError(ctx, http.StatusBadRequest, "Invalid Status Code")
+		response.SendSingleResponseError(ctx, http.StatusBadRequest, "Invalid Room Reservation Status Id")
 		return
 	}
 
 	if user_role != "employee" && new_reserv_status.StatusId == utils.RESERV_STATUS_CANCEL {
-		response.SendSingleResponseError(ctx, http.StatusBadRequest, "Invalid Status Code")
+		response.SendSingleResponseError(ctx, http.StatusBadRequest, "Invalid Room Reservation Status Id")
 		return
 	}
 
-	err := self.uc.ChangeStatus(new_reserv_status)
+	row_resrv, err := self.uc.ChangeStatus(new_reserv_status)
 
 	if err != nil {
 		response.SendSingleResponseError(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	response.SendSingleResponseData(ctx, nil, "Success Change Reservation Status")
+	response.SendSingleResponseData(ctx, row_resrv, "Success Change Reservation Status")
 }
 
 func (self *ReservationController) getListByTokenHandler(ctx *gin.Context) {

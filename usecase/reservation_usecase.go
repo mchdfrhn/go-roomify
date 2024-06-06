@@ -18,7 +18,7 @@ import (
 
 type ReservationUsecase interface {
 	CreateRequest(new_request request.ReservationRequest) ([]response.ReservationResponse, error)
-	ChangeStatus(reserv_status request.ReservationStatusRequest) error
+	ChangeStatus(reserv_status request.ReservationStatusRequest) ([]response.ReservationResponse, error)
 	GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, error)
 }
 
@@ -40,7 +40,7 @@ func (self *reservationUsecase) CreateRequest(new_request request.ReservationReq
 		return nil, errors.New("Invalid Room Id")
 	}
 
-	row_room := rows_room[1]
+	row_room := rows_room[0]
 
 	if !row_room.IsAvailable || !row_room.IsReserveable {
 		return nil, errors.New("Room Not Available or Not Reserveable")
@@ -86,8 +86,19 @@ func (self *reservationUsecase) CreateRequest(new_request request.ReservationReq
 	return self.GetListByToken(fl_reserv_get_list)
 }
 
-func (self *reservationUsecase) ChangeStatus(reserv_status request.ReservationStatusRequest) error {
-	return self.repo.ChangeStatus(reserv_status)
+func (self *reservationUsecase) ChangeStatus(reserv_status request.ReservationStatusRequest) ([]response.ReservationResponse, error) {
+	// Verify Room Availability
+	err := self.repo.ChangeStatus(reserv_status)
+
+	if err != nil {
+		return nil, err
+	}
+
+	fl_reserv_get_list := request.ReservationGetListFilter{
+		ReservationId: reserv_status.ReservationId,
+	}
+
+	return self.GetListByToken(fl_reserv_get_list)
 }
 
 func (self *reservationUsecase) GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, error) {

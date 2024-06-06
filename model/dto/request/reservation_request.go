@@ -20,9 +20,9 @@ type ReservationDetailRequest struct {
 }
 
 type ReservationStatusRequest struct {
-	ReservationId string `json:"reservation_id" binding:"required"`
-	StatusId      string `json:"status_id"`
-	Description   string `json:"description"`
+	ReservationId   string `json:"reservation_id" binding:"required"`
+	StatusId        string `json:"status_id"`
+	ResponseMessage string `json:"response_message"`
 }
 
 type ReservationGetListFilter struct {
