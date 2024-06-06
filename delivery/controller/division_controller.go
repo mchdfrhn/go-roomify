@@ -57,11 +57,11 @@ func (c *DivisionController) CreateDivision(ctx *gin.Context) {
 		return
 	}
 
-	division := model.Division{
-		Id:   req.Id,
-		Name: req.Name,
-	}
-	err := c.uc.CreateDivision(division)
+	// division := model.Division{
+	// 	Id:   req.Id,
+	// 	Name: req.Name,
+	// }
+	division, err := c.uc.CreateDivision(req)
 	if err != nil {
 		response.SendSingleResponseError(ctx, http.StatusInternalServerError, err.Error())
 		return
