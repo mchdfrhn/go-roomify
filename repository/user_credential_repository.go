@@ -7,7 +7,6 @@ import (
 	"go-roomify/model/dto/request"
 	"go-roomify/utils"
 	"go-roomify/utils/query"
-	"fmt"
 )
 
 type UserCredentialRepository interface {
@@ -15,8 +14,8 @@ type UserCredentialRepository interface {
 	GetById(id string) (model.UserCredential, error)
 	GetList(page int, size int) ([]model.UserCredential, dto.Paging, error)
 	AddNew(new_user model.UserCredential) (model.UserCredential, error)
-	UpdatePassword(new_user request.UserUpdatePasswordRequest) (error)
-	Delete(id string) (error)
+	UpdatePassword(new_user request.UserUpdatePasswordRequest) error
+	Delete(id string) error
 }
 
 type userCredentialRepository struct {
@@ -37,8 +36,6 @@ func (self *userCredentialRepository) GetByUsername(username string) (model.User
 	qselect.Join("users", "mst_user_profile.user_id = users.id")
 	qselect.Where("users.username", "=", username)
 	qselect.Limit(1)
-
-	fmt.Println("Repo: ", qselect.GetQuery())
 
 	rows, err := qselect.Run()
 
@@ -170,7 +167,7 @@ func (self *userCredentialRepository) AddNew(new_user model.UserCredential) (mod
 	return new_user, nil
 }
 
-func (self *userCredentialRepository) UpdatePassword(new_user request.UserUpdatePasswordRequest) (error) {
+func (self *userCredentialRepository) UpdatePassword(new_user request.UserUpdatePasswordRequest) error {
 	qupdate := query.QUpdate{DB: self.db}
 
 	qupdate.Table("users")
@@ -182,20 +179,19 @@ func (self *userCredentialRepository) UpdatePassword(new_user request.UserUpdate
 	return err
 }
 
-func (self *userCredentialRepository) Delete(id string) (error) {
+func (self *userCredentialRepository) Delete(id string) error {
 	qdelete := query.QDelete{DB: self.db}
 
 	qdelete.Table("users")
 	qdelete.Where("id", "=", id)
 
 	_, err := qdelete.Run()
-	
+
 	return err
 }
 
-
-func NewUserCredentialRepository(db *sql.DB) (UserCredentialRepository) {
-	return &userCredentialRepository {
+func NewUserCredentialRepository(db *sql.DB) UserCredentialRepository {
+	return &userCredentialRepository{
 		db: db,
 	}
 }
