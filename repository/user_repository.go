@@ -2,7 +2,6 @@ package repository
 
 import (
 	"database/sql"
-	"fmt"
 	"go-roomify/model"
 	"go-roomify/model/dto"
 	"go-roomify/model/dto/request"
@@ -49,8 +48,6 @@ func (u *userProfileRepository) GetList(page, size int) ([]model.UserProfile, dt
 	qselect.Limit(size)
 	qselect.Offset(skip)
 
-	fmt.Println(qselect.GetQuery())
-
 	rows, err := qselect.Run()
 	if err != nil {
 		return nil, dto.Paging{}, err
@@ -83,7 +80,6 @@ func (u *userProfileRepository) GetList(page, size int) ([]model.UserProfile, dt
 	qcount := query.QSelect{DB: u.db}
 	qcount.Table("mst_user_profile")
 	qcount.Column("COUNT(id)")
-	fmt.Println(qcount.GetQuery())
 
 	err = qcount.RunRow().Scan(&totalRows)
 	if err != nil {

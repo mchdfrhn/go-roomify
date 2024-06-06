@@ -8,7 +8,6 @@ import (
 
 type RoleUsecase interface { // layer untuk komunikasi | jembatan antar layer
 	RegisterRole(newRole model.Role) error
-	FindAllRole() ([]model.Role, error)
 	UpdateRole(newRole model.Role) error
 	FindRoleById(id string) (model.Role, error)
 	DeleteRoleById(id string) error
@@ -37,10 +36,6 @@ func (r *roleUsecase) UpdateRole(newRole model.Role) error {
 
 func (r *roleUsecase) RegisterRole(newRole model.Role) error {
 	return r.repo.InsertRole(newRole)
-}
-
-func (r *roleUsecase) FindAllRole() ([]model.Role, error) {
-	return r.repo.GetListRole()
 }
 
 func NewRoleUsecase(repo repository.RoleRepository) RoleUsecase {

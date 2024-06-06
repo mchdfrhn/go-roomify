@@ -9,7 +9,6 @@ import (
 )
 
 type RoleRepository interface {
-	GetListRole() ([]model.Role, error)
 	InsertRole(newRole model.Role) error
 	UpdateRole(newRole model.Role) error
 	GetRoleById(id string) (model.Role, error)
@@ -104,32 +103,6 @@ func newRoleRepository(db *sql.DB) RoleRepository {
 	return &roleRepository{
 		db: db,
 	}
-}
-
-func (r *roleRepository) GetListRole() ([]model.Role, error) {
-	qSelect := &query.QSelect{DB: r.db}
-	qSelect.Table("mst_role").
-		Column("id", "position")
-
-	rows, err := qSelect.Run()
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var roles []model.Role
-	for rows.Next() {
-		var role model.Role
-		err = rows.Scan(
-			&role.Id,
-			&role.Position,
-		)
-		if err != nil {
-			return nil, err
-		}
-		roles = append(roles, role)
-	}
-	return roles, nil
 }
 
 func (r *roleRepository) InsertRole(newRole model.Role) error {
