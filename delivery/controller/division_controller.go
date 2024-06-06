@@ -112,10 +112,10 @@ func (c *DivisionController) Route() {
 	rg.DELETE("/:id", c.DeleteDivision)
 }
 
-func NewDivisionController(uc usecase.DivisionUsecase, router *gin.Engine, auth_middleware middleware.AuthMiddleware) *DivisionController {
+func NewDivisionController(uc usecase.DivisionUsecase, router_group *gin.RouterGroup, auth_middleware middleware.AuthMiddleware) *DivisionController {
 	return &DivisionController{
 		uc:             uc,
-		rg:             &router.RouterGroup,
+		rg:             router_group,
 		authMiddleware: auth_middleware,
 	}
 }

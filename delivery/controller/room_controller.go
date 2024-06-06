@@ -212,10 +212,10 @@ func (rc *roomController) Route() {
 	group.GET("/available", admin_GA_Employee_Middleware, rc.GetRoomAvailableHandler)
 }
 
-func NewRoomController(ru usecase.RoomUsecase, rg *gin.Engine, auth_middleware middleware.AuthMiddleware) *roomController {
+func NewRoomController(ru usecase.RoomUsecase, router_group *gin.RouterGroup, auth_middleware middleware.AuthMiddleware) *roomController {
 	return &roomController{
 		ru:             ru,
-		rg:             &rg.RouterGroup,
+		rg:             router_group,
 		authMiddleware: auth_middleware,
 	}
 }

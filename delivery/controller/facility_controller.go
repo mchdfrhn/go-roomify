@@ -142,10 +142,10 @@ func (fc *FacilityController) Route() {
 	router.DELETE("/:id", fc.authMiddleware.RequireToken(utils.USER_ROLE_ADMIN), fc.DeleteHandler)
 }
 
-func NewFacilityController(uf usecase.FacilityUsecase, router *gin.Engine, auth_middleware middleware.AuthMiddleware) *FacilityController {
+func NewFacilityController(uf usecase.FacilityUsecase, router_group *gin.RouterGroup, auth_middleware middleware.AuthMiddleware) *FacilityController {
 	return &FacilityController{
 		uf:             uf,
-		rg:             &router.RouterGroup,
+		rg:             router_group,
 		authMiddleware: auth_middleware,
 	}
 }

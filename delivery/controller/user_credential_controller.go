@@ -140,10 +140,10 @@ func (self *UserCredentialController) Route() {
 	router.GET("/user", self.authMiddleware.RequireToken("admin"), self.getListHandler)
 }
 
-func NewUserCredentialController(uc usecase.UserCredentialUsecase, router *gin.Engine, auth_middleware middleware.AuthMiddleware) *UserCredentialController {
+func NewUserCredentialController(uc usecase.UserCredentialUsecase, router_group *gin.RouterGroup, auth_middleware middleware.AuthMiddleware) *UserCredentialController {
 	return &UserCredentialController{
 		uc:             uc,
-		rg:             &router.RouterGroup,
+		rg:             router_group,
 		authMiddleware: auth_middleware,
 	}
 }

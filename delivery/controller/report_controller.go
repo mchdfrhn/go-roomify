@@ -57,10 +57,10 @@ func (rc *reportController) Route() {
 	group.GET("/", rc.downloadReportByYearHandler)
 }
 
-func NewReportController(ru usecase.ReportUsecase, rg *gin.Engine, auth_middleware middleware.AuthMiddleware) *reportController {
+func NewReportController(ru usecase.ReportUsecase, router_group *gin.RouterGroup, auth_middleware middleware.AuthMiddleware) *reportController {
 	return &reportController{
 		ru:             ru,
-		rg:             &rg.RouterGroup,
+		rg:             router_group,
 		authMiddleware: auth_middleware,
 	}
 }

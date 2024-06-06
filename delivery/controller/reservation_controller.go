@@ -140,10 +140,10 @@ func (self *ReservationController) Route() {
 	// router.PUT("/decline", self.declineHandler, self.authMiddleware.RequireToken("admin", "ga"))
 }
 
-func NewReservationController(uc usecase.ReservationUsecase, router *gin.Engine, auth_middleware middleware.AuthMiddleware) *ReservationController {
+func NewReservationController(uc usecase.ReservationUsecase, router_group *gin.RouterGroup, auth_middleware middleware.AuthMiddleware) *ReservationController {
 	return &ReservationController{
 		uc:             uc,
-		rg:             &router.RouterGroup,
+		rg:             router_group,
 		authMiddleware: auth_middleware,
 	}
 }

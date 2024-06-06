@@ -158,10 +158,10 @@ func (cc *UserController) Route() {
 	router.DELETE("/:id", cc.deleteByIdHandler)
 }
 
-func NewUserController(uc usecase.UserProfileUsecase, router *gin.Engine, auth_middleware middleware.AuthMiddleware) *UserController {
+func NewUserController(uc usecase.UserProfileUsecase, router_group *gin.RouterGroup, auth_middleware middleware.AuthMiddleware) *UserController {
 	return &UserController{
 		uc:             uc,
-		rg:             &router.RouterGroup,
+		rg:             router_group,
 		authMiddleware: auth_middleware,
 	}
 }

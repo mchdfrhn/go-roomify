@@ -149,10 +149,10 @@ func (rc *RoleController) Route() {
 	router.PUT("", rc.updateHandler)
 }
 
-func NewRoleController(uc usecase.RoleUsecase, router *gin.Engine, auth_middleware middleware.AuthMiddleware) *RoleController {
+func NewRoleController(uc usecase.RoleUsecase, router_group *gin.RouterGroup, auth_middleware middleware.AuthMiddleware) *RoleController {
 	return &RoleController{
 		uc:             uc,
-		rg:             &router.RouterGroup,
+		rg:             router_group,
 		authMiddleware: auth_middleware,
 	}
 }

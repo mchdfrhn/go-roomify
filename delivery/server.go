@@ -29,24 +29,25 @@ type Server struct {
 	reservationUc usecase.ReservationUsecase
 	reportUc      usecase.ReportUsecase
 
-	engine *gin.Engine
-	host   string
+	engine      *gin.Engine
+	routerGroup *gin.RouterGroup
+	host        string
 }
 
 func (self *Server) setupControllers() {
 	// controller.NewCustomerController(s.customerUc, s.engine, s.authMiddleware).Route()
 	// controller.NewServiceController(s.serviceUc, s.engine).Route()
 	// controller.NewTransactionController(s.transactionUc, s.engine).Route()
-	controller.NewRoomController(self.roomUc, self.engine, self.authMiddleware).Route()
-	controller.NewFacilityController(self.facilityUc, self.engine, self.authMiddleware).Route()
+	controller.NewRoomController(self.roomUc, self.routerGroup, self.authMiddleware).Route()
+	controller.NewFacilityController(self.facilityUc, self.routerGroup, self.authMiddleware).Route()
 
-	controller.NewUserController(self.userUc, self.engine, self.authMiddleware).Route()
-	controller.NewRoleController(self.roleUc, self.engine, self.authMiddleware).Route()
-	controller.NewDivisionController(self.divisionUc, self.engine, self.authMiddleware).Route()
-	controller.NewUserCredentialController(self.userCredentialUc, self.engine, self.authMiddleware).Route()
+	controller.NewUserController(self.userUc, self.routerGroup, self.authMiddleware).Route()
+	controller.NewRoleController(self.roleUc, self.routerGroup, self.authMiddleware).Route()
+	controller.NewDivisionController(self.divisionUc, self.routerGroup, self.authMiddleware).Route()
+	controller.NewUserCredentialController(self.userCredentialUc, self.routerGroup, self.authMiddleware).Route()
 
-	controller.NewReservationController(self.reservationUc, self.engine, self.authMiddleware).Route()
-	controller.NewReportController(self.reportUc, self.engine, self.authMiddleware).Route()
+	controller.NewReservationController(self.reservationUc, self.routerGroup, self.authMiddleware).Route()
+	controller.NewReportController(self.reportUc, self.routerGroup, self.authMiddleware).Route()
 }
 
 func (s *Server) Run() {
@@ -110,6 +111,7 @@ func NewServer() *Server {
 
 	// Gin Engine
 	engine := gin.Default()
+	router_group := engine.RouterGroup.Group("/api")
 
 	return &Server{
 		authMiddleware: auth_middleware,
@@ -127,7 +129,8 @@ func NewServer() *Server {
 		reservationUc: resevationUc,
 		reportUc:      reportUc,
 
-		engine: engine,
-		host:   ":8085",
+		engine:      engine,
+		routerGroup: router_group,
+		host:        ":8085",
 	}
 }
