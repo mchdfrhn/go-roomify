@@ -113,7 +113,7 @@ func (self *reservationRepository) CreateRequest(new_request request.Reservation
 	}
 
 	if a, _ := result.RowsAffected(); a == 0 {
-		return errors.New("Failed to make a request, no rows affected")
+		return errors.New("Failed to make new Room Reservation Request")
 	}
 
 	// Insert Reservation Detail
@@ -140,7 +140,7 @@ func (self *reservationRepository) CreateRequest(new_request request.Reservation
 	}
 
 	if a, _ := result.RowsAffected(); a == 0 {
-		return errors.New("Failed to make a request, no rows affected")
+		return errors.New("Failed to make new Room Reservation Request")
 	}
 
 	return nil
