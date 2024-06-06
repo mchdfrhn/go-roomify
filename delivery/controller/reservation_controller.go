@@ -73,7 +73,7 @@ func (self *ReservationController) statusHandler(ctx *gin.Context) {
 		return
 	}
 
-	response.SendSingleResponse(ctx, nil, "Success Change Reservation Status")
+	response.SendSingleResponseData(ctx, nil, "Success Change Reservation Status")
 }
 
 func (self *ReservationController) getListByTokenHandler(ctx *gin.Context) {
@@ -98,7 +98,7 @@ func (self *ReservationController) getListByTokenHandler(ctx *gin.Context) {
 	// var data []any
 	// data = append(data, r_reservation)
 
-	response.SendSingleResponse(ctx, r_reservation, "Success Get List Reservation")
+	response.SendSingleResponseData(ctx, r_reservation, "Success Get List Reservation")
 }
 
 func (self *ReservationController) getByIdByTokenHandler(ctx *gin.Context) {
@@ -120,7 +120,7 @@ func (self *ReservationController) getByIdByTokenHandler(ctx *gin.Context) {
 	//var data []any
 	//data = append(data, r_reservation)
 
-	response.SendSingleResponse(ctx, r_reservation, "Success Get List Reservation")
+	response.SendSingleResponseData(ctx, r_reservation, "Success Get List Reservation")
 }
 
 func (self *ReservationController) Route() {

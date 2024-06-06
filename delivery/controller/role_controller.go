@@ -79,7 +79,7 @@ func (rc *RoleController) findByIdHandler(ctx *gin.Context) {
 		)
 		return
 	}
-	response.SendSingleResponse(
+	response.SendSingleResponseData(
 		ctx,
 		role,
 		"Success Get Role By Id",
@@ -105,7 +105,7 @@ func (rc *RoleController) deleteByIdHandler(ctx *gin.Context) {
 		)
 		return
 	}
-	response.SendSingleResponse(
+	response.SendSingleResponseData(
 		ctx,
 		http.StatusOK,
 		"Success Delete Role By Id",
@@ -133,7 +133,6 @@ func (rc *RoleController) updateHandler(ctx *gin.Context) {
 	}
 	response.SendSingleResponse(
 		ctx,
-		http.StatusOK,
 		"Success Update Role",
 	)
 }

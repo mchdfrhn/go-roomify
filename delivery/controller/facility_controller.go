@@ -107,7 +107,7 @@ func (fc *FacilityController) UpdateHandler(c *gin.Context) {
 		)
 		return
 	}
-	response.SendSingleResponse(
+	response.SendSingleResponseData(
 		c,
 		facilities,
 		"Success Facility Update",
@@ -125,9 +125,8 @@ func (fc *FacilityController) DeleteHandler(c *gin.Context) {
 		)
 		return
 	}
-	response.SendSingleResponseCreated(
+	response.SendSingleResponse(
 		c,
-		http.StatusOK,
 		"Success Facility Delete",
 	)
 }

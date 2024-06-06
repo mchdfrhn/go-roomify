@@ -87,7 +87,7 @@ func (c *DivisionController) UpdateDivision(ctx *gin.Context) {
 		return
 	}
 
-	response.SendSingleResponse(ctx, division, "Division updated successfully")
+	response.SendSingleResponseData(ctx, division, "Division updated successfully")
 }
 
 func (c *DivisionController) DeleteDivision(ctx *gin.Context) {
@@ -98,7 +98,7 @@ func (c *DivisionController) DeleteDivision(ctx *gin.Context) {
 		return
 	}
 
-	response.SendSingleResponse(ctx, http.StatusOK, "Division deleted successfully")
+	response.SendSingleResponse(ctx, "Division deleted successfully")
 }
 
 func (c *DivisionController) Route() {

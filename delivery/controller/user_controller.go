@@ -51,7 +51,7 @@ func (cc *UserController) findByIdHandler(ctx *gin.Context) {
 		)
 		return
 	}
-	response.SendSingleResponse(
+	response.SendSingleResponseData(
 		ctx,
 		user,
 		"Success Get User By Id",
@@ -69,7 +69,7 @@ func (cc *UserController) findByUsernameHandler(ctx *gin.Context) {
 		)
 		return
 	}
-	response.SendSingleResponse(
+	response.SendSingleResponseData(
 		ctx,
 		user,
 		"Success Get User By Username",
@@ -122,7 +122,7 @@ func (cc *UserController) updateHandler(ctx *gin.Context) {
 		)
 		return
 	}
-	response.SendSingleResponse(
+	response.SendSingleResponseData(
 		ctx,
 		user,
 		"Success Update User By Id",
@@ -142,7 +142,6 @@ func (cc *UserController) deleteByIdHandler(ctx *gin.Context) {
 	}
 	response.SendSingleResponse(
 		ctx,
-		http.StatusOK,
 		"Success Delete User By Id",
 	)
 }

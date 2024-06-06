@@ -85,7 +85,7 @@ func (rc *roomController) getRoomByIdOrNameHandler(ctx *gin.Context) {
 		return
 	}
 
-	response.SendSingleResponse(
+	response.SendSingleResponseData(
 		ctx,
 		createdRoom,
 		"Success Get data Room",
@@ -117,7 +117,7 @@ func (rc *roomController) updateRoomByIdHandler(ctx *gin.Context) {
 		return
 	}
 
-	response.SendSingleResponse(
+	response.SendSingleResponseData(
 		ctx,
 		updatedRoom,
 		"Success Update Room",
@@ -138,7 +138,7 @@ func (rc *roomController) deleteRoomByIdHandler(ctx *gin.Context) {
 		return
 	}
 
-	response.SendSingleResponseDelete(
+	response.SendSingleResponse(
 		ctx,
 		"Success delete data Room",
 	)
@@ -169,7 +169,7 @@ func (rc *roomController) updateRoomByIdIsAvailableHandler(ctx *gin.Context) {
 		return
 	}
 
-	response.SendSingleResponse(
+	response.SendSingleResponseData(
 		ctx,
 		updatedRoom,
 		"Success Update Room",
@@ -188,7 +188,7 @@ func (rc *roomController) GetRoomAvailableHandler(ctx *gin.Context) {
 		return
 	}
 
-	response.SendSingleResponse(
+	response.SendSingleResponseData(
 		ctx,
 		availableRoom,
 		"Success get available rooms",
