@@ -197,7 +197,8 @@ func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.Res
 									'id', mst_facility.id,
 									'name', mst_facility.name,
 									'is_available', mst_facility.is_available,
-									'is_reserveable', mst_facility.is_reserveable
+									'is_reserveable', mst_facility.is_reserveable,
+									'room_id', mst_facility.room_id
 								)
 							), '[]'::JSON
 						)
