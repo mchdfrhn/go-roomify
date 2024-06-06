@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"go-roomify/middleware"
 	"go-roomify/model"
 	"go-roomify/model/dto/request"
@@ -34,7 +33,7 @@ func (self *UserCredentialController) loginHandler(ctx *gin.Context) {
 		return
 	}
 
-	response.SendSingleResponseCreated(ctx, r_user_cr, fmt.Sprintf("Success Login"))
+	response.SendSingleResponseCreated(ctx, r_user_cr, "Login Success")
 }
 
 func (self *UserCredentialController) createNewHandler(ctx *gin.Context) {
@@ -52,7 +51,10 @@ func (self *UserCredentialController) createNewHandler(ctx *gin.Context) {
 		return
 	}
 
-	response.SendSingleResponseCreated(ctx, r_user_cr, fmt.Sprintf("Success Create New User"))
+	response.SendSingleResponseCreated(
+		ctx,
+		r_user_cr,
+		"Success Create New User")
 }
 
 func (self *UserCredentialController) getListHandler(ctx *gin.Context) {
@@ -67,7 +69,7 @@ func (self *UserCredentialController) getListHandler(ctx *gin.Context) {
 
 	var data []any
 	data = append(data, rows_user)
-	response.SendSinglePageResponse(ctx, data, "Success Get List User", paging)
+	response.SendSinglePageResponse(ctx, data, "Success Get List User Credential", paging)
 }
 
 func (self *UserCredentialController) getByIdHandler(ctx *gin.Context) {
@@ -76,11 +78,14 @@ func (self *UserCredentialController) getByIdHandler(ctx *gin.Context) {
 	r_user, err := self.uc.GetUserById(id)
 
 	if err != nil {
-		response.SendSingleResponseError(ctx, http.StatusBadRequest, "Invalid Id")
+		response.SendSingleResponseError(ctx, http.StatusBadRequest, "Invalid User Id")
 		return
 	}
 
-	response.SendSingleResponseCreated(ctx, r_user, fmt.Sprintf("Success Get User"))
+	response.SendSingleResponseData(
+		ctx,
+		r_user,
+		"Success Get User Credential Data")
 }
 
 func (self *UserCredentialController) updatePasswordHandler(ctx *gin.Context) {
@@ -98,10 +103,10 @@ func (self *UserCredentialController) updatePasswordHandler(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, response.Status{
-		Code:        http.StatusOK,
-		Description: "Success Update User Password",
-	})
+	response.SendSingleResponse(
+		ctx,
+		"Success Update User Password",
+	)
 }
 
 func (self *UserCredentialController) deleteHandler(ctx *gin.Context) {
@@ -117,10 +122,10 @@ func (self *UserCredentialController) deleteHandler(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, response.Status{
-		Code:        http.StatusOK,
-		Description: "Success Delete User Data",
-	})
+	response.SendSingleResponse(
+		ctx,
+		"Success Delete User Credential Data",
+	)
 }
 
 func (self *UserCredentialController) Route() {
