@@ -2,7 +2,6 @@ package controller
 
 import (
 	"go-roomify/middleware"
-	"go-roomify/model"
 	"go-roomify/model/dto/request"
 	"go-roomify/model/dto/response"
 	"go-roomify/usecase"
@@ -94,7 +93,7 @@ func (rc *roomController) getRoomByIdOrNameHandler(ctx *gin.Context) {
 }
 
 func (rc *roomController) updateRoomByIdHandler(ctx *gin.Context) {
-	var updateRoom model.Room
+	var updateRoom request.UpdateRoomRequest
 
 	if err := ctx.ShouldBindJSON(&updateRoom); err != nil {
 		response.SendSingleResponseError(
@@ -158,7 +157,7 @@ func (rc *roomController) updateRoomByIdIsAvailableHandler(ctx *gin.Context) {
 		return
 	}
 
-	updatedRoom, code, err := rc.ru.UpdateRoomByIdIsAvailableOnly(updateRoom.Id, *updateRoom.IsAvailable)
+	updatedRoom, code, err := rc.ru.UpdateRoomByIdIsAvailableOnly(updateRoom)
 
 	if err != nil {
 		response.SendSingleResponseError(

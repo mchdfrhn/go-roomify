@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-roomify/model"
 	"go-roomify/model/dto"
+	"go-roomify/model/dto/request"
 	"go-roomify/model/dto/response"
 	"go-roomify/utils"
 	"go-roomify/utils/query"
@@ -15,9 +16,10 @@ type RoomRepository interface {
 	GetRoomIdIfExist(name string, roomtypeId string) (string, error)
 	GetAllRoom(page int, skip int, size int, paramType string) ([]response.RoomResponse, dto.Paging, error)
 	GetRoomByIdOrName(idOrNameRoom string) ([]response.RoomResponse, error)
-	UpdateRoomById(updateRoom model.Room) (model.Room, error)
+	UpdateRoomById(updateRoom request.UpdateRoomRequest) (request.UpdateRoomRequest, error)
 	DeleteRoomById(roomId string) error
 	GetAvailableRoom(paramType string) ([]response.RoomResponse, error)
+	UpdateRoomByIdAvailableOnly(updateRoom request.RoomStatusRequest) error
 }
 
 type roomRepository struct {
@@ -192,7 +194,7 @@ func (rr *roomRepository) GetRoomByIdOrName(roomidOrName string) ([]response.Roo
 	return responseData, nil
 }
 
-func (rr *roomRepository) UpdateRoomById(updateRoom model.Room) (model.Room, error) {
+func (rr *roomRepository) UpdateRoomById(updateRoom request.UpdateRoomRequest) (request.UpdateRoomRequest, error) {
 	query := query.QUpdate{DB: rr.db}
 
 	_, err := query.Table(
@@ -207,9 +209,6 @@ func (rr *roomRepository) UpdateRoomById(updateRoom model.Room) (model.Room, err
 		"capacity",
 		updateRoom.Capacity,
 	).Set(
-		"is_available",
-		updateRoom.IsAvailable,
-	).Set(
 		"is_reserveable",
 		updateRoom.IsReserveable,
 	).Where(
@@ -217,7 +216,7 @@ func (rr *roomRepository) UpdateRoomById(updateRoom model.Room) (model.Room, err
 	).Run()
 
 	if err != nil {
-		return model.Room{}, err
+		return request.UpdateRoomRequest{}, err
 	}
 
 	return updateRoom, nil
@@ -295,6 +294,25 @@ func (rr *roomRepository) GetAvailableRoom(paramType string) ([]response.RoomRes
 	}
 
 	return responseData, nil
+}
+
+func (rr *roomRepository) UpdateRoomByIdAvailableOnly(updateRoom request.RoomStatusRequest) error {
+	query := query.QUpdate{DB: rr.db}
+
+	_, err := query.Table(
+		"mst_room",
+	).Set(
+		"is_available",
+		updateRoom.IsAvailable,
+	).Where(
+		"id", "=", updateRoom.Id,
+	).Run()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (rr *roomRepository) scanRoomAndFacility(rows *sql.Rows) ([]response.RoomResponse, error) {
