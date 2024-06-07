@@ -258,14 +258,14 @@ func (rr *roomRepository) GetAvailableRoom() ([]response.RoomResponse, error) {
 	return responseData, nil
 }
 
-func (rr *roomRepository) scanRoomAndFacility(rows *sql.Rows) ([]response.RoomResponse, error){
+func (rr *roomRepository) scanRoomAndFacility(rows *sql.Rows) ([]response.RoomResponse, error) {
 	var responseData []response.RoomResponse
 	var roomResponse response.RoomResponse
 
 	for rows.Next() {
 		var currentRoom model.Room
 		var currentFacility response.FacilityForRoomResponse
-	
+
 		err := rows.Scan(
 			&currentRoom.Id,
 			&currentRoom.Name,
@@ -280,12 +280,12 @@ func (rr *roomRepository) scanRoomAndFacility(rows *sql.Rows) ([]response.RoomRe
 		if err != nil {
 			return nil, err
 		}
-	
+
 		if currentRoom.Id != roomResponse.Id {
 			if roomResponse.Id != "" {
 				responseData = append(responseData, roomResponse)
 			}
-	
+
 			roomResponse = response.RoomResponse{
 				Id:            currentRoom.Id,
 				Name:          currentRoom.Name,
@@ -295,7 +295,7 @@ func (rr *roomRepository) scanRoomAndFacility(rows *sql.Rows) ([]response.RoomRe
 				IsReserveable: *currentRoom.IsReserveable,
 			}
 		}
-	
+
 		if currentFacility.Id != "null" {
 			roomResponse.Facilities = append(roomResponse.Facilities, currentFacility)
 		}
