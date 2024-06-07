@@ -193,7 +193,7 @@ func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.Res
 				SELECT JSON_BUILD_OBJECT(
 					'id', mst_room.id,
 					'name', mst_room.name,
-					'room_type', JSON_BUILD_OBJECT(
+					'roomtype', JSON_BUILD_OBJECT(
 						'id', room_type.id,
 						'name', room_type.name
 					),

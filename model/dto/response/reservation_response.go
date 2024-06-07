@@ -27,7 +27,7 @@ type ReservationUserProfileResponse struct {
 type ReservationRoomResponse struct {
 	ID            string           `json:"id"`
 	Name          string           `json:"name"`
-	RoomType      model.RoomType   `json:"room_type"`
+	RoomType      model.RoomType   `json:"roomtype"`
 	Capacity      int              `json:"capacity"`
 	IsAvailable   bool             `json:"is_available"`
 	IsReserveable bool             `json:"is_reserveable"`
