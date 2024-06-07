@@ -8,6 +8,7 @@ import (
 	"go-roomify/usecase"
 	"go-roomify/utils"
 	"net/http"
+	"strconv"
 
 	//"strconv"
 
@@ -79,26 +80,35 @@ func (self *ReservationController) statusHandler(ctx *gin.Context) {
 func (self *ReservationController) getListByTokenHandler(ctx *gin.Context) {
 	jwt_claims := ctx.MustGet("claims").(jwt.MapClaims)
 
+	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
+	size, _ := strconv.Atoi(ctx.DefaultQuery("size", "10"))
+
 	fl_reserv_get_list := request.ReservationGetListFilter{
-		UserId:          jwt_claims["user_id"].(string),
-		UserRole:        jwt_claims["role"].(string),
-		FilterStatus:    ctx.DefaultQuery("fl_status", ""),
-		FilterStartDate: ctx.DefaultQuery("fl_start_date", ""),
-		FilterEndDate:   ctx.DefaultQuery("fl_end_date", ""),
-		FilterRoomId:    ctx.DefaultQuery("fl_room_id", ""),
+		UserId:           jwt_claims["user_id"].(string),
+		UserRole:         jwt_claims["role"].(string),
+		FilterStatus:     ctx.DefaultQuery("fl_status", ""),
+		FilterStartDate:  ctx.DefaultQuery("fl_start_date", ""),
+		FilterEndDate:    ctx.DefaultQuery("fl_end_date", ""),
+		FilterRoomId:     ctx.DefaultQuery("fl_room_id", ""),
+		FilterPageNumber: page,
+		FilterPageSize:   size,
 	}
 
-	r_reservation, err := self.uc.GetListByToken(fl_reserv_get_list)
+	r_reservation, pagination, err := self.uc.GetListByToken(fl_reserv_get_list)
 
 	if err != nil {
 		response.SendSingleResponseError(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	// var data []any
-	// data = append(data, r_reservation)
+	var data []any
+	data = append(data, r_reservation)
 
-	response.SendSingleResponseData(ctx, r_reservation, "Success Get List Reservation")
+	response.SendSinglePageResponse(
+		ctx,
+		data,
+		"Success Get List Reservation",
+		pagination)
 }
 
 func (self *ReservationController) getByIdByTokenHandler(ctx *gin.Context) {
@@ -110,7 +120,7 @@ func (self *ReservationController) getByIdByTokenHandler(ctx *gin.Context) {
 		ReservationId: ctx.Param("id"),
 	}
 
-	r_reservation, err := self.uc.GetListByToken(fl_reserv_get_list)
+	r_reservation, _, err := self.uc.GetListByToken(fl_reserv_get_list)
 
 	if err != nil {
 		response.SendSingleResponseError(ctx, http.StatusBadRequest, err.Error())

@@ -26,11 +26,13 @@ type ReservationStatusRequest struct {
 }
 
 type ReservationGetListFilter struct {
-	UserId          string
-	UserRole        string
-	ReservationId   string
-	FilterStatus    string
-	FilterStartDate string
-	FilterEndDate   string
-	FilterRoomId    string
+	UserId           string
+	UserRole         string
+	ReservationId    string
+	FilterStatus     string
+	FilterStartDate  string
+	FilterEndDate    string
+	FilterRoomId     string
+	FilterPageNumber int
+	FilterPageSize   int
 }

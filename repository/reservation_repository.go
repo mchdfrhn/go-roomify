@@ -3,10 +3,12 @@ package repository
 import (
 	"database/sql"
 	"encoding/json"
+	"go-roomify/model/dto"
 	"go-roomify/model/dto/request"
 	"go-roomify/model/dto/response"
 	"go-roomify/utils"
 	"go-roomify/utils/validation"
+	"strconv"
 
 	//"go-roomify/model/dto"
 	//"go-roomify/model/dto/request"
@@ -19,7 +21,7 @@ import (
 type ReservationRepository interface {
 	CreateRequest(new_request request.ReservationRequest) error
 	ChangeStatus(reserv_status request.ReservationStatusRequest) error
-	GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, error)
+	GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, dto.Paging, error)
 }
 
 type reservationRepository struct {
@@ -143,14 +145,18 @@ func (self *reservationRepository) ChangeStatus(reserv_status request.Reservatio
 	return err
 }
 
-func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, error) {
+func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, dto.Paging, error) {
 	filter_status := fl_reserv_get_list.FilterStatus
 	filter_start_date := fl_reserv_get_list.FilterStartDate
 	filter_end_date := fl_reserv_get_list.FilterEndDate
 	filter_room_id := fl_reserv_get_list.FilterRoomId
+	filter_pagenum := fl_reserv_get_list.FilterPageNumber
+	filter_pagesize := fl_reserv_get_list.FilterPageSize
 	resrv_id := fl_reserv_get_list.ReservationId
 	user_id := fl_reserv_get_list.UserId
 	user_role := fl_reserv_get_list.UserRole
+
+	resultPagingDto := dto.Paging{}
 
 	// Query SQL
 	var querySQL = `
@@ -264,6 +270,11 @@ func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.Res
 			querySQL += "AND mst_room.id = " + validation.EscapeString(filter_room_id)
 		}
 	}
+	skip := (filter_pagenum - 1) * filter_pagesize
+
+	querySQL += " LIMIT " + strconv.Itoa(filter_pagesize)
+	querySQL += " OFFSET " + strconv.Itoa(skip)
+
 	querySQL += `
 	) AS all_reservations`
 
@@ -273,20 +284,34 @@ func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.Res
 	err := self.db.QueryRow(querySQL).Scan(&bjson_reserv)
 
 	if err != nil {
-		return nil, err
+		return nil, resultPagingDto, err
 	}
 
 	if len(bjson_reserv) == 0 {
-		return rows_reserv_response, nil
+		return rows_reserv_response, resultPagingDto, nil
 	}
 
 	err = json.Unmarshal(bjson_reserv, &rows_reserv_response)
 
+	// PAGINATION
+
 	if err != nil {
-		return nil, errors.New("Error unmarshaling JSON")
+		return nil, resultPagingDto, errors.New("Error unmarshaling JSON")
 	}
 
-	return rows_reserv_response, nil
+	var totalRows int
+	qcount := query.QSelect{DB: self.db}
+	qcount.Table("tx_reservation")
+	qcount.Column("COUNT(id)")
+
+	count_err := qcount.RunRow().Scan(&totalRows)
+	if err != nil {
+		return nil, resultPagingDto, count_err
+	}
+
+	resultPagingDto = utils.Paginate(filter_pagenum, filter_pagesize, totalRows)
+
+	return rows_reserv_response, resultPagingDto, nil
 }
 
 func NewReservationRepository(db *sql.DB) ReservationRepository {

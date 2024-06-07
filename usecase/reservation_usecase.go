@@ -5,6 +5,7 @@ import (
 
 	"errors"
 	"go-roomify/model"
+	"go-roomify/model/dto"
 	"go-roomify/model/dto/request"
 	"go-roomify/model/dto/response"
 	"go-roomify/repository"
@@ -19,7 +20,7 @@ import (
 type ReservationUsecase interface {
 	CreateRequest(new_request request.ReservationRequest) ([]response.ReservationResponse, error)
 	ChangeStatus(reserv_status request.ReservationStatusRequest) ([]response.ReservationResponse, error)
-	GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, error)
+	GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, dto.Paging, error)
 }
 
 type reservationUsecase struct {
@@ -83,7 +84,9 @@ func (self *reservationUsecase) CreateRequest(new_request request.ReservationReq
 		ReservationId: new_request.Id,
 	}
 
-	return self.GetListByToken(fl_reserv_get_list)
+	row_reserv, _, err := self.GetListByToken(fl_reserv_get_list)
+
+	return row_reserv, err
 }
 
 func (self *reservationUsecase) ChangeStatus(reserv_status request.ReservationStatusRequest) ([]response.ReservationResponse, error) {
@@ -98,10 +101,12 @@ func (self *reservationUsecase) ChangeStatus(reserv_status request.ReservationSt
 		ReservationId: reserv_status.ReservationId,
 	}
 
-	return self.GetListByToken(fl_reserv_get_list)
+	row_reserv, _, err := self.GetListByToken(fl_reserv_get_list)
+
+	return row_reserv, err
 }
 
-func (self *reservationUsecase) GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, error) {
+func (self *reservationUsecase) GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, dto.Paging, error) {
 	return self.repo.GetListByToken(fl_reserv_get_list)
 }
 
