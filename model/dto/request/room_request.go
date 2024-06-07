@@ -1,10 +1,10 @@
 package request
 
 type RoomRequest struct {
-	Name     string `json:"name" binding:"required"`
-	RoomType string `json:"roomtype" binding:"required"`
-	Capacity int    `json:"capacity" binding:"required"`
-	IsReserveable *bool `json:"is_reserveable" binding:"required"`
+	Name          string `json:"name" binding:"required"`
+	RoomTypeId    string `json:"room_type_id" binding:"required"`
+	Capacity      int    `json:"capacity" binding:"required"`
+	IsReserveable *bool  `json:"is_reserveable" binding:"required"`
 }
 
 type RoomStatusRequest struct {

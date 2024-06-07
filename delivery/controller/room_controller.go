@@ -51,8 +51,9 @@ func (rc *roomController) createRoomHandler(ctx *gin.Context) {
 func (rc *roomController) getAllroomHandler(ctx *gin.Context) {
 	paramPage := ctx.Query("page")
 	paramSize := ctx.Query("size")
+	paramType := ctx.Query("type")
 
-	room, paging, code, err := rc.ru.GetAllRoom(paramPage, paramSize)
+	room, paging, code, err := rc.ru.GetAllRoom(paramPage, paramSize, paramType)
 	if err != nil {
 		response.SendSingleResponseError(
 			ctx,
@@ -177,7 +178,9 @@ func (rc *roomController) updateRoomByIdIsAvailableHandler(ctx *gin.Context) {
 }
 
 func (rc *roomController) GetRoomAvailableHandler(ctx *gin.Context) {
-	availableRoom, code, err := rc.ru.GetAvailableRoom()
+	paramType := ctx.Query("type")
+
+	availableRoom, code, err := rc.ru.GetAvailableRoom(paramType)
 	if err != nil {
 		response.SendSingleResponseError(
 			ctx,

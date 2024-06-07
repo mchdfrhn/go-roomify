@@ -12,6 +12,8 @@ type RoomResponse struct {
 	RoomType      string                    `json:"roomtype"`
 	Capacity      int                       `json:"capacity"`
 	IsAvailable   bool                      `json:"is_available"`
+	StartTime     string                    `json:"start_time"`
+	EndTIme       string                    `json:"end_time"`
 	IsReserveable bool                      `json:"is_reserveable"`
 	Facilities    []FacilityForRoomResponse `json:"facilities"`
 }
