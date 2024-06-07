@@ -38,7 +38,7 @@ func (rc *reportController) downloadReportByYearHandler(ctx *gin.Context) {
 	}
 
 	ctx.Header("Content-type", "text/csv")
-	ctx.Header("Content-Disposition", "attachment; filename=\"report_start="+startYear+"_end="+endYear+".csv\"")
+	ctx.Header("Content-Disposition", "attachment; filename=\"reservation_report_"+startYear+"_"+endYear+".csv\"")
 
 	err = sqltocsv.Write(ctx.Writer, rows)
 	if err != nil {
