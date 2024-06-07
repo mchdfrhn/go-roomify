@@ -162,8 +162,14 @@ func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.Res
 				SELECT JSON_BUILD_OBJECT(
 					'id', mst_user_profile.id,
 					'full_name', mst_user_profile.full_name,
-					'division', mst_division.name,
-					'role', mst_role.position,
+					'division', JSON_BUILD_OBJECT(
+						'id', mst_division.id,
+						'name', mst_division.name
+					),
+					'role', JSON_BUILD_OBJECT(
+						'id', mst_role.id,
+						'position', mst_role.position
+					),
 					'address', mst_user_profile.address,
 					'phone_number', mst_user_profile.phone_number
 				)
@@ -187,7 +193,10 @@ func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.Res
 				SELECT JSON_BUILD_OBJECT(
 					'id', mst_room.id,
 					'name', mst_room.name,
-					'roomtype', mst_room.roomtype,
+					'room_type', JSON_BUILD_OBJECT(
+						'id', room_type.id,
+						'name', room_type.name
+					),
 					'capacity', mst_room.capacity,
 					'is_available', mst_room.is_available,
 					'is_reserveable', mst_room.is_reserveable,
@@ -208,6 +217,8 @@ func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.Res
 					)
 				)
 				FROM mst_room
+				JOIN room_type
+					ON room_type.id = mst_room.room_type_id
 				WHERE mst_room.id = tx_reservation.room_id
 			),
 			'request_message', tx_reservation.request_message,

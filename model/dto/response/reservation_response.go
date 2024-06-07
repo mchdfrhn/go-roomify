@@ -16,18 +16,18 @@ type ReservationResponse struct {
 }
 
 type ReservationUserProfileResponse struct {
-	ID          string `json:"id"`
-	FullName    string `json:"full_name"`
-	Division    string `json:"division"`
-	Role        string `json:"role"`
-	Address     string `json:"address"`
-	PhoneNumber string `json:"phone_number"`
+	ID          string         `json:"id"`
+	FullName    string         `json:"full_name"`
+	Division    model.Division `json:"division"`
+	Role        model.Role     `json:"role"`
+	Address     string         `json:"address"`
+	PhoneNumber string         `json:"phone_number"`
 }
 
 type ReservationRoomResponse struct {
 	ID            string           `json:"id"`
 	Name          string           `json:"name"`
-	RoomType      string           `json:"roomtype"`
+	RoomType      model.RoomType   `json:"room_type"`
 	Capacity      int              `json:"capacity"`
 	IsAvailable   bool             `json:"is_available"`
 	IsReserveable bool             `json:"is_reserveable"`
