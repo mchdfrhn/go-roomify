@@ -41,6 +41,7 @@ func (self *Server) setupControllers() {
 	// controller.NewTransactionController(s.transactionUc, s.engine).Route()
 	controller.NewRoomController(self.roomUc, self.routerGroup, self.authMiddleware).Route()
 	controller.NewFacilityController(self.facilityUc, self.routerGroup, self.authMiddleware).Route()
+	controller.NewRoomTypeController(self.roomTypeUc, self.routerGroup, self.authMiddleware).Route()
 
 	controller.NewUserController(self.userUc, self.routerGroup, self.authMiddleware).Route()
 	controller.NewRoleController(self.roleUc, self.routerGroup, self.authMiddleware).Route()
