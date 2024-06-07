@@ -84,11 +84,11 @@ func NewServer() *Server {
 
 	// ------- ROOM ------
 
-	roomRepo := repository.NewRoomRepository(db.Conn())
-	roomUc := usecase.NewRoomUsecase(roomRepo)
-
 	roomTypeRepo := repository.NewRoomTypeRepository(db.Conn())
 	roomTypeUc := usecase.NewRoomTypeUsecase(roomTypeRepo)
+
+	roomRepo := repository.NewRoomRepository(db.Conn())
+	roomUc := usecase.NewRoomUsecase(roomRepo, roomTypeUc)
 
 	facilityRepo := repository.NewFacilityRepository(db.Conn())
 	facilityUc := usecase.NewFacilityUsecase(facilityRepo)
