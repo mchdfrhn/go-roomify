@@ -37,8 +37,8 @@ func (ru *roomTypeUsecase) CreateRoomType(roomTypeRequest request.RoomTypeReques
 	}
 
 	roomTypeModel := model.RoomType{
-		Id:            uuid.NewString(),
-		Name:          roomTypeRequest.Name,
+		Id:   uuid.NewString(),
+		Name: roomTypeRequest.Name,
 	}
 
 	err = ru.repo.CreateRoomType(roomTypeModel)
@@ -61,7 +61,7 @@ func (ru *roomTypeUsecase) GetAllRoomType() ([]model.RoomType, int, error) {
 func (ru *roomTypeUsecase) GetRoomTypeByIdOrName(roomTypeIdOrName string) (model.RoomType, int, error) {
 	findRoomType, err := ru.repo.GetRoomTypeByIdOrName(roomTypeIdOrName)
 	if err != nil {
-		return model.RoomType{}, http.StatusInternalServerError, fmt.Errorf("server error")
+		return model.RoomType{}, http.StatusInternalServerError, err
 	}
 
 	if findRoomType.Id == "" {
@@ -87,16 +87,19 @@ func (ru *roomTypeUsecase) UpdateRoomTypeById(updateRoomType model.RoomType) (mo
 
 	findRoomTypeByName, status, err := ru.GetRoomTypeByIdOrName(updateRoomType.Name)
 	if err != nil {
-		return model.RoomType{}, status, err
+		if status != 404 {
+			return model.RoomType{}, status, err
+		}
 	}
 
-	if findRoomTypeByName.Name == updateRoomType.Name {
-		return model.RoomType{}, http.StatusConflict, fmt.Errorf("room type with the same name already exists")
+	if findRoomTypeByName.Name == updateRoomType.Name &&
+		findRoomTypeByName.Id != updateRoomType.Id {
+		return model.RoomType{}, http.StatusBadRequest, fmt.Errorf("name must be unique")
 	}
 
 	updatedRoomType, err := ru.repo.UpdateRoomTypeById(updateRoomType)
 	if err != nil {
-		return model.RoomType{}, http.StatusInternalServerError, fmt.Errorf("server error")
+		return model.RoomType{}, http.StatusInternalServerError, err
 	}
 
 	return updatedRoomType, http.StatusOK, nil
@@ -110,7 +113,7 @@ func (ru *roomTypeUsecase) DeleteRoomTypeById(roomTypeId string) (int, error) {
 
 	err = ru.repo.DeleteRoomTypeById(roomTypeId)
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("server error")
+		return http.StatusInternalServerError, err
 	}
 
 	return http.StatusOK, nil

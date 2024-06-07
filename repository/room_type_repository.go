@@ -120,7 +120,7 @@ func (rr *roomTypeRepository) DeleteRoomTypeById(roomId string) error {
 	).Where(
 		"id", "=", roomId,
 	).Run()
-	
+
 	if err != nil {
 		return err
 	}
