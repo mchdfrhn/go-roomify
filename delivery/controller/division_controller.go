@@ -47,7 +47,7 @@ func (c *DivisionController) GetDivisionById(ctx *gin.Context) {
 		response.SendSingleResponseError(ctx, http.StatusNotFound, "Division not found")
 		return
 	}
-	response.SendDivisionResponse(ctx, http.StatusOK, division)
+	response.SendSingleResponseData(ctx, division, "Success Get Division By ID")
 }
 
 func (c *DivisionController) CreateDivision(ctx *gin.Context) {
