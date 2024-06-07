@@ -81,7 +81,9 @@ func (self *reservationUsecase) CreateRequest(new_request request.ReservationReq
 	}
 
 	fl_reserv_get_list := request.ReservationGetListFilter{
-		ReservationId: new_request.Id,
+		ReservationId:    new_request.Id,
+		FilterPageNumber: 1,
+		FilterPageSize:   1,
 	}
 
 	row_reserv, _, err := self.GetListByToken(fl_reserv_get_list)
@@ -98,7 +100,9 @@ func (self *reservationUsecase) ChangeStatus(reserv_status request.ReservationSt
 	}
 
 	fl_reserv_get_list := request.ReservationGetListFilter{
-		ReservationId: reserv_status.ReservationId,
+		ReservationId:    reserv_status.ReservationId,
+		FilterPageNumber: 1,
+		FilterPageSize:   1,
 	}
 
 	row_reserv, _, err := self.GetListByToken(fl_reserv_get_list)
