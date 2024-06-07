@@ -4,6 +4,7 @@ import (
 	"go-roomify/middleware"
 	"go-roomify/model/dto/response"
 	"go-roomify/usecase"
+	"go-roomify/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -54,6 +55,9 @@ func (rc *reportController) downloadReportByYearHandler(ctx *gin.Context) {
 
 func (rc *reportController) Route() {
 	group := rc.rg.Group("/report")
+	group.Use(rc.authMiddleware.RequireToken(
+		utils.USER_ROLE_ADMIN,
+		utils.USER_ROLE_GA))
 	group.GET("/", rc.downloadReportByYearHandler)
 }
 
