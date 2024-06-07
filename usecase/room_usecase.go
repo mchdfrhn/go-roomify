@@ -17,14 +17,14 @@ type RoomUsecase interface {
 	CreateRoom(roomRequest request.RoomRequest) (model.Room, int, error)
 	GetAllRoom(paramPage string, paramSize string, paramType string) ([]any, dto.Paging, int, error)
 	GetRoomByIdOrName(idOrNameRoom string) ([]response.RoomResponse, int, error)
-	UpdateRoomById(updateRoomRequest model.Room) (model.Room, int, error)
+	UpdateRoomById(updateRoomRequest request.UpdateRoomRequest) (request.UpdateRoomRequest, int, error)
 	DeleteRooomById(roomId string) (int, error)
-	UpdateRoomByIdIsAvailableOnly(roomId string, isAvailable bool) (model.Room, int, error)
+	UpdateRoomByIdIsAvailableOnly(request.RoomStatusRequest) (request.RoomStatusRequest, int, error)
 	GetAvailableRoom(paramType string) ([]response.RoomResponse, int, error)
 }
 
 type roomUsecase struct {
-	repo repository.RoomRepository
+	repo       repository.RoomRepository
 	roomTypeUc RoomTypeUsecase
 }
 
@@ -109,45 +109,44 @@ func (ru *roomUsecase) GetRoomByIdOrName(roomIdOrName string) ([]response.RoomRe
 	return findRoom, http.StatusOK, nil
 }
 
-func (ru *roomUsecase) UpdateRoomById(updateRoom model.Room) (model.Room, int, error) {
+func (ru *roomUsecase) UpdateRoomById(updateRoom request.UpdateRoomRequest) (request.UpdateRoomRequest, int, error) {
 	if len(updateRoom.Name) > 200 {
-		return model.Room{}, http.StatusBadRequest, fmt.Errorf("name max 200 char")
+		return request.UpdateRoomRequest{}, http.StatusBadRequest, fmt.Errorf("name max 200 char")
 	}
 
 	if len(updateRoom.RoomTypeId) > 200 {
-		return model.Room{}, http.StatusBadRequest, fmt.Errorf("room type max 200 char")
+		return request.UpdateRoomRequest{}, http.StatusBadRequest, fmt.Errorf("room type max 200 char")
 	}
 
 	findRoom, status, err := ru.GetRoomByIdOrName(updateRoom.Id)
 	if err != nil {
-		return model.Room{}, status, err
+		return request.UpdateRoomRequest{}, status, err
 	}
 
 	if len(findRoom) > 1 {
-		return model.Room{}, http.StatusBadRequest, fmt.Errorf("by id not by name")
+		return request.UpdateRoomRequest{}, http.StatusBadRequest, fmt.Errorf("by id not by name")
 	}
 
 	if findRoom[0].Id == updateRoom.Id &&
 		findRoom[0].Name == updateRoom.Name &&
 		findRoom[0].Capacity == updateRoom.Capacity &&
-		findRoom[0].IsAvailable == *updateRoom.IsAvailable &&
 		findRoom[0].IsReserveable == *updateRoom.IsReserveable {
-		
-		return model.Room{}, http.StatusBadRequest, fmt.Errorf("no changes detected")
+
+		return request.UpdateRoomRequest{}, http.StatusBadRequest, fmt.Errorf("no changes detected")
 	}
 
 	findIdSameRoomAndType, err := ru.repo.GetRoomIdIfExist(updateRoom.Name, updateRoom.RoomTypeId)
 	if err != nil {
-		return model.Room{}, http.StatusInternalServerError, fmt.Errorf("server error")
+		return request.UpdateRoomRequest{}, http.StatusInternalServerError, fmt.Errorf("server error")
 	}
 
 	if findIdSameRoomAndType != updateRoom.Id {
-		return model.Room{}, http.StatusConflict, fmt.Errorf("a room with the same name and type already exists")
+		return request.UpdateRoomRequest{}, http.StatusConflict, fmt.Errorf("a room with the same name and type already exists")
 	}
 
 	updatedRoom, err := ru.repo.UpdateRoomById(updateRoom)
 	if err != nil {
-		return model.Room{}, http.StatusInternalServerError, fmt.Errorf("server error")
+		return request.UpdateRoomRequest{}, http.StatusInternalServerError, fmt.Errorf("server error")
 	}
 
 	return updatedRoom, http.StatusOK, nil
@@ -167,29 +166,22 @@ func (ru *roomUsecase) DeleteRooomById(roomId string) (int, error) {
 	return http.StatusOK, nil
 }
 
-func (ru *roomUsecase) UpdateRoomByIdIsAvailableOnly(roomId string, isAvailable bool) (model.Room, int, error) {
-	findRoom, status, err := ru.GetRoomByIdOrName(roomId)
+func (ru *roomUsecase) UpdateRoomByIdIsAvailableOnly(updateRoom request.RoomStatusRequest) (request.RoomStatusRequest, int, error) {
+	findRoom, status, err := ru.GetRoomByIdOrName(updateRoom.Id)
 	if err != nil {
-		return model.Room{}, status, err
+		return request.RoomStatusRequest{}, status, err
 	}
 
 	if len(findRoom) > 1 {
-		return model.Room{}, http.StatusBadRequest, fmt.Errorf("by id not by name")
+		return request.RoomStatusRequest{}, http.StatusBadRequest, fmt.Errorf("by id not by name")
 	}
 
-	updateRoom := model.Room{
-		Id:            findRoom[0].Id,
-		Name:          findRoom[0].Name,
-		Capacity:      findRoom[0].Capacity,
-		IsAvailable:   &isAvailable,
-		IsReserveable: &findRoom[0].IsReserveable,
-	}
-	updatedRoom, status, err := ru.UpdateRoomById(updateRoom)
+	err = ru.repo.UpdateRoomByIdAvailableOnly(updateRoom)
 	if err != nil {
-		return model.Room{}, status, err
+		return request.RoomStatusRequest{}, http.StatusInternalServerError, fmt.Errorf("server error")
 	}
 
-	return updatedRoom, http.StatusOK, nil
+	return updateRoom, http.StatusOK, nil
 }
 
 func (ru *roomUsecase) GetAvailableRoom(paramType string) ([]response.RoomResponse, int, error) {
@@ -203,7 +195,7 @@ func (ru *roomUsecase) GetAvailableRoom(paramType string) ([]response.RoomRespon
 
 func NewRoomUsecase(repo repository.RoomRepository, roomTypeUc RoomTypeUsecase) RoomUsecase {
 	return &roomUsecase{
-		repo: repo,
+		repo:       repo,
 		roomTypeUc: roomTypeUc,
 	}
 }
