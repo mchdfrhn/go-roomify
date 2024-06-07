@@ -6,15 +6,15 @@ import (
 )
 
 type ReportRepository interface {
-	GetReportByYear( startYear string, endYear string ) ( *sql.Rows, error )
+	GetReportByYear(startYear string, endYear string) (*sql.Rows, error)
 }
 
 type reportRepository struct {
 	db *sql.DB
 }
 
-func (self *reportRepository) GetReportByYear( startYear string, endYear string ) ( *sql.Rows, error ){
-	
+func (self *reportRepository) GetReportByYear(startYear string, endYear string) (*sql.Rows, error) {
+
 	query := query.QSelect{DB: self.db}
 
 	rows, err := query.Table(
@@ -26,7 +26,7 @@ func (self *reportRepository) GetReportByYear( startYear string, endYear string 
 		"up.phone_number AS user_phone_number",
 		"role.position AS user_position",
 		"room.name AS room_name",
-		"room.roomtype",
+		"room_type.name AS room_type",
 		"room.capacity",
 		"f.name AS facility_name",
 		"tr.reservation_date",
@@ -40,7 +40,7 @@ func (self *reportRepository) GetReportByYear( startYear string, endYear string 
 		"trd.reservation_id = tr.id",
 	).Join(
 		"mst_room AS room",
-		"trd.room_id = room.id",
+		"tr.room_id = room.id",
 	).Join(
 		"mst_facility AS f",
 		"room.id = f.room_id",
@@ -56,6 +56,9 @@ func (self *reportRepository) GetReportByYear( startYear string, endYear string 
 	).Join(
 		"mst_role AS role",
 		"up.role_id = role.id",
+	).Join(
+		"room_type",
+		"room_type.id = room.room_type_id",
 	).Where(
 		"tr.reservation_date",
 		">=",
@@ -71,11 +74,10 @@ func (self *reportRepository) GetReportByYear( startYear string, endYear string 
 	}
 
 	return rows, nil
-	
 }
 
-func NewReportRepository(db *sql.DB) (ReportRepository) {
-	return &reportRepository {
+func NewReportRepository(db *sql.DB) ReportRepository {
+	return &reportRepository{
 		db: db,
 	}
 }
