@@ -1,22 +1,29 @@
+// Package repository menangani akses dan manipulasi data langsung ke database PostgreSQL.
 package repository
 
+// Import package database/sql dan query builder.
 import (
-	"database/sql"
-	"go-roomify/utils/query"
+	"database/sql"           // Interface koneksi database SQL
+	"go-roomify/utils/query" // Builder query SQL dinamis
 )
 
+// ReportRepository merupakan kontrak interface untuk generasi laporan data reservasi.
 type ReportRepository interface {
-	GetReportByYear(startYear string, endYear string) (*sql.Rows, error)
+	GetReportByYear(startYear string, endYear string) (*sql.Rows, error) // Mengambil baris data laporan reservasi berdasar tentang tahun/tanggal
 }
 
+// reportRepository merupakan struktur konkrit pengelola repository laporan.
 type reportRepository struct {
-	db *sql.DB
+	db *sql.DB // Pointer koneksi database PostgreSQL
 }
 
+// GetReportByYear mengambil data gabungan reservasi, peminjam, ruangan, dan fasilitas berdasarkan rentang tanggal/tahun.
 func (self *reportRepository) GetReportByYear(startYear string, endYear string) (*sql.Rows, error) {
 
+	// Inisialisasi builder SELECT
 	query := query.QSelect{DB: self.db}
 
+	// Menyusun relasi JOIN dan subquery agregasi string untuk fasilitas ruangan & fasilitas tambahan
 	rows, err := query.Table(
 		"tx_reservation AS tr",
 	).Column(
@@ -38,7 +45,6 @@ func (self *reportRepository) GetReportByYear(startYear string, endYear string) 
 				on trd.facility_id = f.id
 			where trd.reservation_id = tr.id
 		) as additional_facilitys`,
-		//"f.name AS facility_name",
 		"tr.reservation_date",
 		"tr.start_time",
 		"tr.end_time",
@@ -46,10 +52,6 @@ func (self *reportRepository) GetReportByYear(startYear string, endYear string) 
 		"trs.name AS status",
 		"tr.response_message",
 	).
-		// LeftJoin(
-		// 	"tx_reservation_detail AS trd",
-		// 	"trd.reservation_id = tr.id",
-		// ).
 		LeftJoin(
 			"mst_room AS room",
 			"tr.room_id = room.id",
@@ -79,13 +81,16 @@ func (self *reportRepository) GetReportByYear(startYear string, endYear string) 
 		endYear,
 	).Run()
 
+	// Memeriksa jika terjadi error saat eksekusi query
 	if err != nil {
 		return nil, err
 	}
 
+	// Mengembalikan cursor *sql.Rows hasil query
 	return rows, nil
 }
 
+// NewReportRepository menginisialisasi provider ReportRepository baru.
 func NewReportRepository(db *sql.DB) ReportRepository {
 	return &reportRepository{
 		db: db,

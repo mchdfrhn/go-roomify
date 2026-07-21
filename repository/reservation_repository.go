@@ -1,35 +1,35 @@
+// Package repository menangani akses dan manipulasi data langsung ke database PostgreSQL.
 package repository
 
+// Import package database/sql, json, dto, utils, validation, strconv, query, dan errors.
 import (
-	"database/sql"
-	"encoding/json"
-	"go-roomify/model/dto"
-	"go-roomify/model/dto/request"
-	"go-roomify/model/dto/response"
-	"go-roomify/utils"
-	"go-roomify/utils/validation"
-	"strconv"
-
-	//"go-roomify/model/dto"
-	//"go-roomify/model/dto/request"
-	//"go-roomify/utils"
-	"go-roomify/utils/query"
-	// "fmt"
-	"errors"
+	"database/sql"                    // Interface koneksi database SQL
+	"encoding/json"                   // Serialisasi/deserialisasi JSON
+	"errors"                          // Membuat error instan
+	"go-roomify/model/dto"            // DTO paginasi
+	"go-roomify/model/dto/request"    // DTO request reservasi
+	"go-roomify/model/dto/response"   // DTO response reservasi
+	"go-roomify/utils"                // Helper konstanta & paginasi
+	"go-roomify/utils/query"          // Builder query SQL dinamis
+	"go-roomify/utils/validation"     // Helper escape string
+	"strconv"                         // Konversi angka ke string
 )
 
+// ReservationRepository merupakan kontrak interface untuk mengelola transaksi pemesanan ruangan.
 type ReservationRepository interface {
-	CreateRequest(new_request request.ReservationRequest) error
-	ChangeStatus(reserv_status request.ReservationStatusRequest) error
-	GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, dto.Paging, error)
+	CreateRequest(new_request request.ReservationRequest) error                                                      // Membuat permintaan reservasi baru
+	ChangeStatus(reserv_status request.ReservationStatusRequest) error                                               // Mengubah status persetujuan reservasi
+	GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, dto.Paging, error) // Mengambil daftar reservasi berdasar filter & token
 }
 
+// reservationRepository merupakan struktur konkrit pengelola transaksi reservasi.
 type reservationRepository struct {
-	db *sql.DB
+	db *sql.DB // Pointer koneksi database PostgreSQL
 }
 
+// CreateRequest menyisipkan data reservasi header dan fasilitas tambahan ke database.
 func (self *reservationRepository) CreateRequest(new_request request.ReservationRequest) error {
-	// Insert Reservation
+	// Inisialisasi builder INSERT untuk tx_reservation
 	qinsert := query.QInsert{DB: self.db}
 
 	qinsert.Table("tx_reservation")
@@ -42,6 +42,7 @@ func (self *reservationRepository) CreateRequest(new_request request.Reservation
 		"reservation_status_id",
 		"room_id",
 		"request_message")
+	// Parameter nilai header reservasi
 	qinsert.Values(
 		new_request.Id,
 		new_request.UserProfileId,
@@ -52,19 +53,20 @@ func (self *reservationRepository) CreateRequest(new_request request.Reservation
 		new_request.RoomId,
 		new_request.RequestMessage)
 
+	// Eksekusi insert header
 	result, err := qinsert.Run()
 
 	if err != nil {
 		return err
 	}
 
+	// Cek jumlah baris yang terpengaruh
 	if a, _ := result.RowsAffected(); a == 0 {
 		return errors.New("Failed to make new Room Reservation Request")
 	}
 
-	// Insert Reservation Detail
+	// Inisialisasi builder INSERT untuk detail fasilitas tambahan
 	qinsert = query.QInsert{DB: self.db}
-	//req_detail := new_request.Detail
 
 	qinsert.Table("tx_reservation_detail")
 	qinsert.Column(
@@ -72,6 +74,7 @@ func (self *reservationRepository) CreateRequest(new_request request.Reservation
 		"reservation_id",
 		"facility_id")
 
+	// Iterasi fasilitas tambahan yang dipesan
 	for _, additional_facility := range new_request.AdditionalFacility {
 		qinsert.Values(
 			additional_facility.Id,
@@ -79,6 +82,7 @@ func (self *reservationRepository) CreateRequest(new_request request.Reservation
 			additional_facility.FacilityId)
 	}
 
+	// Eksekusi insert detail fasilitas
 	result, err = qinsert.Run()
 
 	if err != nil {
@@ -92,8 +96,9 @@ func (self *reservationRepository) CreateRequest(new_request request.Reservation
 	return nil
 }
 
+// ChangeStatus memperbarui status reservasi (Disetujui/Ditolak) dan ketersediaan fisik ruangan.
 func (self *reservationRepository) ChangeStatus(reserv_status request.ReservationStatusRequest) error {
-	// // SET ROOM TO UNAVAILABLE
+	// Ambil room_id dari data reservasi yang diproses
 	qselect := query.QSelect{DB: self.db}
 	qselect.Table("tx_reservation AS rv")
 	qselect.Column("rv.room_id")
@@ -101,11 +106,12 @@ func (self *reservationRepository) ChangeStatus(reserv_status request.Reservatio
 
 	var room_id string
 
+	// Eksekusi pencarian room_id
 	if err := qselect.RunRow().Scan(&room_id); err != nil {
 		return err
 	}
 
-	// Update Room Reservation
+	// Jika status disetujui (ACCEPTED), ubah status fisik ketersediaan ruangan menjadi false
 	if reserv_status.StatusId == utils.RESERV_STATUS_ACCEPTED {
 		qupdate := query.QUpdate{DB: self.db}
 		qupdate.Table("mst_room")
@@ -123,7 +129,7 @@ func (self *reservationRepository) ChangeStatus(reserv_status request.Reservatio
 		}
 	}
 
-	// Set Transaction Status
+	// Perbarui status transaksi reservasi dan pesan balasan dari GA/Admin
 	qupdate := query.QUpdate{DB: self.db}
 
 	qupdate.Table("tx_reservation")
@@ -145,7 +151,9 @@ func (self *reservationRepository) ChangeStatus(reserv_status request.Reservatio
 	return err
 }
 
+// GetListByToken mengambil daftar reservasi terstruktur JSON berdasarkan filter dan hak akses pengguna.
 func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.ReservationGetListFilter) ([]response.ReservationResponse, dto.Paging, error) {
+	// Ekstraksi nilai filter
 	filter_status := fl_reserv_get_list.FilterStatus
 	filter_start_date := fl_reserv_get_list.FilterStartDate
 	filter_end_date := fl_reserv_get_list.FilterEndDate
@@ -158,7 +166,7 @@ func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.Res
 
 	resultPagingDto := dto.Paging{}
 
-	// Query SQL
+	// Menyusun query SQL kompleks dengan subquery JSON_AGG & JSON_BUILD_OBJECT PostgreSQL
 	var querySQL = `
 	SELECT JSON_AGG(reservation_info) AS all_reservations
 	FROM (
@@ -250,10 +258,12 @@ func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.Res
 		LEFT JOIN tx_reservation_status ON tx_reservation_status.id = tx_reservation.reservation_status_id
 		LEFT JOIN mst_room ON mst_room.id = tx_reservation.room_id
 		WHERE true `
+	// Jika role adalah employee, filter hanya untuk id miliknya sendiri
 	if user_role == "employee" {
 		querySQL += "AND tx_reservation.user_profile_id = " + validation.EscapeString(user_id)
 	}
 
+	// Filter berdasarkan ID spesifik atau kombinasi filter lain
 	if resrv_id != "" {
 		querySQL += "AND tx_reservation.id = " + validation.EscapeString(resrv_id)
 	} else {
@@ -270,8 +280,10 @@ func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.Res
 			querySQL += "AND mst_room.id = " + validation.EscapeString(filter_room_id)
 		}
 	}
+	// Menghitung offset paginasi
 	skip := (filter_pagenum - 1) * filter_pagesize
 
+	// Menambahkan LIMIT dan OFFSET pada query
 	querySQL += " LIMIT " + strconv.Itoa(filter_pagesize)
 	querySQL += " OFFSET " + strconv.Itoa(skip)
 
@@ -281,24 +293,26 @@ func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.Res
 	var bjson_reserv []byte
 	var rows_reserv_response []response.ReservationResponse
 
+	// Eksekusi query untuk menerima raw JSON byte
 	err := self.db.QueryRow(querySQL).Scan(&bjson_reserv)
 
 	if err != nil {
 		return nil, resultPagingDto, err
 	}
 
+	// Memeriksa jika hasil query kosong
 	if len(bjson_reserv) == 0 {
 		return rows_reserv_response, resultPagingDto, nil
 	}
 
+	// Unmarshal byte JSON ke slice struct response.ReservationResponse
 	err = json.Unmarshal(bjson_reserv, &rows_reserv_response)
-
-	// PAGINATION
 
 	if err != nil {
 		return nil, resultPagingDto, errors.New("Error unmarshaling JSON")
 	}
 
+	// Menghitung total data reservasi untuk metadata paginasi
 	var totalRows int
 	qcount := query.QSelect{DB: self.db}
 	qcount.Table("tx_reservation")
@@ -309,11 +323,13 @@ func (self *reservationRepository) GetListByToken(fl_reserv_get_list request.Res
 		return nil, resultPagingDto, count_err
 	}
 
+	// Mengolah DTO metadata paginasi
 	resultPagingDto = utils.Paginate(filter_pagenum, filter_pagesize, totalRows)
 
 	return rows_reserv_response, resultPagingDto, nil
 }
 
+// NewReservationRepository menginisialisasi instansi konkrit ReservationRepository baru.
 func NewReservationRepository(db *sql.DB) ReservationRepository {
 	return &reservationRepository{
 		db: db,
