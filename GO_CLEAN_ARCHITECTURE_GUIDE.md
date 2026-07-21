@@ -1,52 +1,58 @@
-# 📘 Panduan Utama Arsitektur Project (`go-roomify`)
+# 🌱 Panduan Evolusi Proyek Go (`go-roomify`) — Dari Sederhana Hingga Skala Besar
 
-Selamat datang di Panduan Arsitektur & Blueprint pembuatan aplikasi **`go-roomify`**. Dokumentasi ini disusun secara terstruktur ke dalam folder `docs/` untuk memudahkan Anda mempelajari dan menggunakannya sebagai acuan pembuatan proyek Go berbasis **Clean Architecture**.
-
----
-
-## 🗂️ Indeks Dokumentasi Detail (`docs/`)
-
-Setiap tahapan dan modul pembuatan proyek telah dipecah ke dalam file dokumentasi terpisah di bawah ini:
-
-| Bagian | Topik & Modul | Deskripsi | Link Dokumentasi |
-| :--- | :--- | :--- | :--- |
-| **01** | **Inisialisasi & Dependensi** | Langkah awal `go mod init` dan instalasi library utama (`gin`, `pq`, `godotenv`, `jwt`, `uuid`). | [📄 Buka Panduan](docs/01_inisialisasi_dan_dependensi.md) |
-| **02** | **Konfigurasi & Database** | Pengaturan file `.env`, pembacaan file environment (`config/config.go`), dan koneksi database (`config/db_connection.go`). | [📄 Buka Panduan](docs/02_konfigurasi_dan_koneksi_database.md) |
-| **03** | **Model & DTO** | Penyiapan entitas domain model, DTO Paginasi, dan skema balasan HTTP response terstandarisasi (`model/dto/response`). | [📄 Buka Panduan](docs/03_model_domain_dan_dto.md) |
-| **04** | **Utility & Helper** | Fungsi pembantu umum seperti kalkulator paginasi (`utils/paginate.go`) dan JWT Token Generator/Verifier (`utils/common`). | [📄 Buka Panduan](docs/04_utility_dan_helper.md) |
-| **05** | **Data Access Layer** | Pembuatan repository interface & eksekusi query SQL dengan `database/sql` & Custom Query Builder (`repository/`). | [📄 Buka Panduan](docs/05_data_access_layer_repository.md) |
-| **06** | **Business Logic Layer** | Implementasi aturan bisnis, validasi, orchestration data, dan mapping HTTP status code (`usecase/`). | [📄 Buka Panduan](docs/06_business_logic_layer_usecase.md) |
-| **07** | **Middleware & Keamanan** | Proteksi endpoint menggunakan JWT token verification dan Role-Based Access Control (RBAC) di `middleware/`. | [📄 Buka Panduan](docs/07_middleware_dan_keamanan.md) |
-| **08** | **Presentation Layer** | Penyiapan Gin HTTP Controllers, penanganan payload request, routing, dan pemanggilan usecase (`delivery/controller/`). | [📄 Buka Panduan](docs/08_presentation_layer_controller.md) |
-| **09** | **Dependency Injection** | Perangkaian hubungan antar layer (**DB ➔ Repo ➔ Usecase ➔ Controller ➔ Router**) di `delivery/server.go` dan `main.go`. | [📄 Buka Panduan](docs/09_dependency_injection_dan_bootstrap.md) |
-| **10** | **Cheat Sheet Fitur Baru** | Panduan cepat langkah-demi-langkah (6 urutan baku) ketika hendak menambah modul/fitur baru ke dalam proyek. | [📄 Buka Panduan](docs/10_cheat_sheet_fitur_baru.md) |
+> **Filosofi Pengembangan:**  
+> Seorang *developer* tidak langsung membuat 10 folder dan puluhan file di hari pertama. Manusia membangun aplikasi secara bertahap: **mulai dari yang paling sederhana (1 file `main.go`), memastikan fitur berjalan, lalu secara perlahan melakukan *refactoring* ke Clean Architecture saat proyek mulai membesar.**
 
 ---
 
-## 🏗️ Ringkasan Struktur Folder Proyek
+## 🗺️ Roadmap Evolusi Pengembangan (Human Workflow)
+
+```mermaid
+graph TD
+    F1[Fase 1: Hello World Server] -->|Server Berjalan| F2[Fase 2: Konek Database]
+    F2 -->|DB Terhubung| F3[Fase 3: CRUD Pertama Sederhana]
+    F3 -->|Fitur Berjalan| F4[Fase 4: Refactoring ke Clean Architecture]
+    F4 -->|Kode Rapi| F5[Fase 5: Tambah Auth JWT & Middleware]
+    F5 -->|Keamanan Siap| F6[Fase 6: Scaling Up & Dependency Injection]
+```
+
+---
+
+## 📚 Indeks Dokumentasi Berdasarkan Fase Evolusi
+
+| Fase | Topik Pengembangan | Apa yang Dikerjakan? | Link Dokumentasi |
+| :---: | :--- | :--- | :--- |
+| **01** | **Fase 1: Hello World Server** | Membuat HTTP server paling sederhana (1 file `main.go`) pakai Gin Gonic untuk memastikan server bisa `LISTEN & SERVE`. | [📄 Buka Fase 1](docs/01_fase_1_hello_world_server.md) |
+| **02** | **Fase 2: Koneksi Database** | Menambahkan driver PostgreSQL (`lib/pq`) dan membuka koneksi DB sederhana di aplikasi. | [📄 Buka Fase 2](docs/02_fase_2_koneksi_database.md) |
+| **03** | **Fase 3: CRUD Pertama (Monolit)** | Membuat 1 fitur CRUD utuh (misal: Ruangan) langsung dalam file sederhana untuk memahami alur `HTTP Request ➔ DB ➔ JSON Response`. | [📄 Buka Fase 3](docs/03_fase_3_crud_pertama_monolit.md) |
+| **04** | **Fase 4: Refactoring Clean Arch** | Karena kode mulai menumpuk, kita pecah kode ke 4 layer utama: `model`, `repository`, `usecase`, dan `controller`. | [📄 Buka Fase 4](docs/04_fase_4_refactoring_clean_architecture.md) |
+| **05** | **Fase 5: Otentikasi JWT & Guard** | Menambahkan sistem Login/Register, token JWT, dan proteksi endpoint dengan `middleware`. | [📄 Buka Fase 5](docs/05_fase_5_otentikasi_jwt_dan_middleware.md) |
+| **06** | **Fase 6: Dependency Injection & Scale Up** | Merapikan wiring dependency di `delivery/server.go`, menggunakan Query Builder, Paginasi, dan menambah modul lain. | [📄 Buka Fase 6](docs/06_fase_6_dependency_injection_dan_scaleup.md) |
+
+---
+
+## 📂 Struktur Akhir Setelah Aplikasi Membesar
+
+Setelah melalui Fase 1 hingga 6, proyek Anda secara alami akan bertransformasi dari 1 file tunggal menjadi struktur berkas profesional berikut:
 
 ```text
 go-roomify/
-├── GO_CLEAN_ARCHITECTURE_GUIDE.md   # Hub Utama Panduan (File Ini)
-├── docs/                            # Folder Dokumentasi Modul Terpisah
-│   ├── 01_inisialisasi_dan_dependensi.md
-│   ├── 02_konfigurasi_dan_koneksi_database.md
-│   ├── 03_model_domain_dan_dto.md
-│   ├── 04_utility_dan_helper.md
-│   ├── 05_data_access_layer_repository.md
-│   ├── 06_business_logic_layer_usecase.md
-│   ├── 07_middleware_dan_keamanan.md
-│   ├── 08_presentation_layer_controller.md
-│   ├── 09_dependency_injection_dan_bootstrap.md
-│   └── 10_cheat_sheet_fitur_baru.md
-├── config/                          # Konfigurasi & DB Connection
-├── delivery/                        # Presentation Layer (Controllers & Server)
-├── middleware/                      # HTTP Middleware (Auth JWT)
+├── GO_CLEAN_ARCHITECTURE_GUIDE.md   # Hub Utama Panduan Ini
+├── docs/                            # Dokumentasi Evolusi Per-Fase
+│   ├── 01_fase_1_hello_world_server.md
+│   ├── 02_fase_2_koneksi_database.md
+│   ├── 03_fase_3_crud_pertama_monolit.md
+│   ├── 04_fase_4_refactoring_clean_architecture.md
+│   ├── 05_fase_5_otentikasi_jwt_dan_middleware.md
+│   └── 06_fase_6_dependency_injection_dan_scaleup.md
+├── config/                          # Konfigurasi & DB Connection (Hasil Refaktor)
+├── delivery/                        # Transport Layer / Controllers & Server Engine
+├── middleware/                      # Auth JWT & Role Guard
 ├── model/                           # Domain Entities & DTOs
-├── repository/                      # Data Access Layer (SQL Queries)
+├── repository/                      # Data Access Layer (DB Queries)
 ├── usecase/                         # Business Logic Layer
-├── utils/                           # Helper Functions & Query Builder
+├── utils/                           # Query Builder, JWT Helper, Paginate
 ├── .env                             # Environment Variables
-├── go.mod                           # Go Module Spec
-└── main.go                          # Application Entry Point
+├── go.mod                           # Modul & Dependensi Go
+└── main.go                          # Entry Point Sederhana
 ```
